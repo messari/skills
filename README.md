@@ -32,7 +32,7 @@ An [OpenClaw](https://openclaw.ai) / [ClawHub](https://clawhub.ai) skill that wr
 
 ### 1. Get a Messari account
 
-Sign up at [messari.io](https://messari.io). MCP clients authenticate via OAuth — you'll be guided through a login flow on first use. For the OpenClaw skill (REST API), you'll also need an [API key](https://messari.io/api).
+Sign up at [messari.io](https://messari.io) and get an [API key](https://messari.io/api).
 
 ### 2. Set up your client
 
