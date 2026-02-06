@@ -32,26 +32,24 @@ Sign up at [messari.io/api](https://messari.io/api). You'll also need Messari AI
 
 #### Claude / Claude Code
 
-Run from your terminal:
+Add to your project's `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "messari": {
+      "url": "https://mcp.messari.io/mcp"
+    }
+  }
+}
+```
+
+Or run the local server via CLI:
 
 ```bash
 claude mcp add messari_sdk_ts_api \
   -e MESSARI_SDK_API_KEY=<YOUR_API_KEY> \
   -- npx -y @messari/sdk-ts-mcp --client=claude --tools=dynamic
-```
-
-Or add to your project's `.mcp.json`:
-
-```json
-{
-  "messari_sdk_ts_api": {
-    "command": "npx",
-    "args": ["-y", "@messari/sdk-ts-mcp", "--client=claude", "--tools=dynamic"],
-    "env": {
-      "MESSARI_SDK_API_KEY": "<YOUR_API_KEY>"
-    }
-  }
-}
 ```
 
 #### Codex
@@ -74,12 +72,8 @@ Add to `.cursor/mcp.json` (project-level) or `~/.cursor/mcp.json` (global):
 ```json
 {
   "mcpServers": {
-    "messari_sdk_ts_api": {
-      "command": "npx",
-      "args": ["-y", "@messari/sdk-ts-mcp", "--tools=dynamic"],
-      "env": {
-        "MESSARI_SDK_API_KEY": "<YOUR_API_KEY>"
-      }
+    "messari": {
+      "url": "https://mcp.messari.io/mcp"
     }
   }
 }
