@@ -86,10 +86,21 @@ The skill calls `https://api.messari.io` directly with the `x-messari-api-key` h
 ### 3. Start asking questions
 
 ```
-"What's the bull case for ETH right now?"
-"Which tokens are gaining mindshare this week?"
-"Show me SOL's 90-day price and volume trend"
-"What's the BTC perpetual funding rate?"
+"Which assets over $1B marketcap outperformed Bitcoin over the last 3 months?"
+"What are some upcoming token unlock events this month?"
+"Give me the 10 most recent fundraising rounds in the AI and compute sectors."
+"What is the percent change in price for Aave and Maker over the last month?"
+"What are the latest headlines related to crypto regulation?"
+"What are some recent developments in the DePin sector?"
+"Which investor has been the most active in seed rounds over the last year?"
+"What is decentralized compute and why it is important to AI?"
+"What were the top events for the AAVE protocol during the last quarter?"
+"Give me the latest ecosystem map of Solana."
+"What is the average DexVolume and total fee revenue last month for Ethereum, Solana and Base?"
+"Tell me about the recent investments from a16z crypto."
+"What are some trends that Messari has written about recently?"
+"Has the GMX protocol undergone any audits?"
+"Compare and contrast the native asset functions of BitTensor vs Render."
 ```
 
 ## Links
