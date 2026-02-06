@@ -27,7 +27,7 @@ For clients that natively support MCP (Claude Code, Cursor, Codex, etc.), use th
 Install via ClawHub:
 
 ```bash
-clawhub install messari/messari-crypto-intel
+clawhub install messari/messari-crypto
 ```
 
 ## Quick Start
@@ -57,7 +57,7 @@ Sign up at [messari.io/api](https://messari.io/api). You'll also need Messari AI
 **For OpenClaw**, install the skill and set your API key:
 
 ```bash
-clawhub install messari/messari-crypto-intel
+clawhub install messari/messari-crypto
 ```
 
 The skill routes requests to `https://api.messari.io` with the `x-messari-api-key` header.
@@ -86,4 +86,4 @@ Available filters: `ai.*`, `signal.*`, `metrics.*`, `news.*`, `research.*`, `sta
 - [MCP Server Documentation](https://docs.messari.io/mcp-server/hosted)
 - [Messari API](https://messari.io/api)
 - [Messari](https://messari.io)
-- [OpenClaw Skill on ClawHub](https://clawhub.ai/messari/messari-crypto-intel)
+- [OpenClaw Skill on ClawHub](https://clawhub.ai/messari/messari-crypto)

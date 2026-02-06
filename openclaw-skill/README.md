@@ -52,7 +52,7 @@ No data pipelines. No custom integrations. Just plug in your API key and ask que
 ### 1. Install the skill
 
 ```bash
-clawhub install messari/messari-crypto-intel
+clawhub install messari/messari-crypto
 ```
 
 ### 2. Set your API key

@@ -1,5 +1,5 @@
 ---
-name: messari-crypto-intel
+name: messari-crypto
 description: >
   Crypto market intelligence powered by Messari's REST API. Provides real-time access to
   Messari AI (chat completions over 30TB+ crypto data), Signal (sentiment, mindshare, trending
