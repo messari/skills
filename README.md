@@ -14,13 +14,19 @@ Point your agent at [`SKILL.md`](./SKILL.md) for self-contained integration inst
 
 Messari's hosted MCP server. Gives any MCP-compatible AI client direct access to Messari's data stack:
 
-- **AI** — Chat completions trained on 30TB+ of structured and unstructured crypto data
-- **Signal** — Social sentiment, token mindshare, trending narratives
-- **Metrics** — Price, volume, market cap, and fundamentals for 34,000+ assets across 210+ exchanges
-- **News** — Real-time crypto news aggregation
-- **Research** — Institutional-grade reports, protocol deep dives, sector analysis
-- **Stablecoins** — On-chain metrics, timeseries, and per-chain breakdowns for 25+ stablecoins
-- **Derivatives** — Funding rates, open interest, futures volumes for 500+ assets
+- **MessariAI** — Integrate with MessariAI to unlock all of our AI capabilities
+- **Asset & Market Data** — Market data such as price, trading volume and marketcap for over 40,000 assets
+- **Signals** — Track social data and narratives including mindshare and sentiment across individual crypto projects, or at the sector/sub-sector level
+- **News** — Aggregated news from 500+ sources including headlines, links and summaries, with assets tagged per article
+- **Research** — Access to Messari's Protocol Reporting Research
+- **Stablecoins** — Onchain data for 30+ stablecoins such as USDT, USDC and DAI, including stablecoin marketcap, active addresses, transfers, transaction volume and more
+- **Networks** — Onchain data for 25+ Layer-1s and Layer-2s such as Ethereum and Solana, including transaction fees, active addresses, and more
+- **Protocols** — Onchain data for 200+ protocols such as Uniswap and Aave, including Total Value Locked, active addresses, deposits/borrows, trading volume, and more
+- **Exchanges** — Spot volumes, futures volume and futures open interest across cryptocurrency exchanges
+- **Token Unlocks** — Monitor token vesting schedules, upcoming unlock events, and token allocation details for over 200 crypto projects
+- **Fundraising** — Crypto's biggest fundraising database for funding rounds, M&A deals, and investors
+- **Intel** — Real-time onchain and offchain event monitoring with human curated summaries
+- **Topics** — Topic-based content aggregation and trending narrative tracking
 
 Full documentation: **[docs.messari.io/mcp-server/hosted](https://docs.messari.io/mcp-server/hosted)**
 
