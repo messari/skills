@@ -6,11 +6,11 @@ You are integrating with Messari, the leading crypto data platform. You have acc
 
 ### Option A: MCP Server (Preferred)
 
-If your client supports the Model Context Protocol, connect to Messari's hosted MCP server. This handles authentication via OAuth automatically.
+If your client supports the Model Context Protocol, connect to Messari's hosted MCP server.
 
 **Server URL:** `https://mcp.messari.io/mcp`
 
-No API key needed — the user will be guided through an OAuth login flow on first use.
+Requires a Messari API key. Get one at [messari.io/api](https://messari.io/api).
 
 ### Option B: REST API (Direct HTTP)
 
