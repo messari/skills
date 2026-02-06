@@ -4,7 +4,7 @@ Model Context Protocol (MCP) integrations for [Messari](https://messari.io) — 
 
 ## What's Here
 
-### [`@messari/sdk-ts-mcp`](https://docs.messari.io/mcp-server/hosted)
+### [Messari Hosted MCP Server](https://docs.messari.io/mcp-server/hosted)
 
 Messari's hosted MCP server. Gives any MCP-compatible AI client direct access to Messari's data stack:
 
@@ -24,15 +24,21 @@ An [OpenClaw](https://openclaw.ai) / [ClawHub](https://clawhub.ai) skill that wr
 
 ## Quick Start
 
-### 1. Get a Messari API key
+### 1. Get a Messari account
 
-Sign up at [messari.io/api](https://messari.io/api). You'll also need Messari AI credits for the AI completion endpoints.
+Sign up at [messari.io](https://messari.io). MCP clients authenticate via OAuth — you'll be guided through a login flow on first use. For the OpenClaw skill (REST API), you'll also need an [API key](https://messari.io/api).
 
 ### 2. Set up your client
 
 #### Claude / Claude Code
 
-Add to your project's `.mcp.json`:
+Run from your terminal:
+
+```bash
+claude mcp add --transport http --scope user messari https://mcp.messari.io/mcp
+```
+
+Or add to your project's `.mcp.json`:
 
 ```json
 {
@@ -44,25 +50,13 @@ Add to your project's `.mcp.json`:
 }
 ```
 
-Or run the local server via CLI:
-
-```bash
-claude mcp add messari_sdk_ts_api \
-  -e MESSARI_SDK_API_KEY=<YOUR_API_KEY> \
-  -- npx -y @messari/sdk-ts-mcp --client=claude --tools=dynamic
-```
-
 #### Codex
 
 Add to `~/.codex/config.toml`:
 
 ```toml
-[mcp_servers.messari_sdk_ts_api]
-command = "npx"
-args = ["-y", "@messari/sdk-ts-mcp", "--tools=dynamic"]
-
-[mcp_servers.messari_sdk_ts_api.env]
-MESSARI_SDK_API_KEY = "<YOUR_API_KEY>"
+[mcp_servers.messari]
+url = "https://mcp.messari.io/mcp"
 ```
 
 #### Cursor
@@ -97,16 +91,6 @@ The skill calls `https://api.messari.io` directly with the `x-messari-api-key` h
 "Show me SOL's 90-day price and volume trend"
 "What's the BTC perpetual funding rate?"
 ```
-
-## Filtering Endpoints (MCP only)
-
-Don't need every service? Use `--resource` flags:
-
-```
---resource 'ai.*'
-```
-
-Available filters: `ai.*`, `signal.*`, `metrics.*`, `news.*`, `research.*`, `stablecoins.*`, `derivatives.*`
 
 ## Links
 
