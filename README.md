@@ -2,6 +2,12 @@
 
 Model Context Protocol (MCP) integrations for [Messari](https://messari.io) — connecting AI agents to real-time crypto market intelligence.
 
+## For AI Agents
+
+Point your agent at [`SKILL.md`](./SKILL.md) for self-contained integration instructions — all endpoints, authentication, routing logic, and examples in one file.
+
+**Raw URL:** `https://raw.githubusercontent.com/messari/skills/master/SKILL.md`
+
 ## What's Here
 
 ### [Messari Hosted MCP Server](https://docs.messari.io/mcp-server/hosted)
