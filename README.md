@@ -1,6 +1,6 @@
-# Messari MCP
+# Messari Agent Skills
 
-Model Context Protocol (MCP) integrations for [Messari](https://messari.io) — connecting AI agents to real-time crypto market intelligence.
+Crypto market intelligence for AI agents — MCP, REST API, and agent-native skill files for [Messari](https://messari.io).
 
 ## For AI Agents
 
