@@ -1,6 +1,6 @@
 # Messari Agent Skills
 
-Crypto market intelligence for AI agents — MCP, REST API, and agent-native skill files for [Messari](https://messari.io).
+Crypto intelligence for AI agents — MCP, REST API, and agent-native skill files for [Messari](https://messari.io).
 
 ## For AI Agents
 
