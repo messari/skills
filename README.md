@@ -1,6 +1,12 @@
-# Messari MCP
+# Messari Agent Skills
 
-Model Context Protocol (MCP) integrations for [Messari](https://messari.io) — connecting AI agents to real-time crypto market intelligence.
+Crypto market intelligence for AI agents — MCP, REST API, and agent-native skill files for [Messari](https://messari.io).
+
+## For AI Agents
+
+Point your agent at [`SKILL.md`](./SKILL.md) for self-contained integration instructions — all endpoints, authentication, routing logic, and examples in one file.
+
+**Raw URL:** `https://raw.githubusercontent.com/messari/skills/master/SKILL.md`
 
 ## What's Here
 
@@ -26,7 +32,7 @@ An [OpenClaw](https://openclaw.ai) / [ClawHub](https://clawhub.ai) skill that wr
 
 ### 1. Get a Messari account
 
-Sign up at [messari.io](https://messari.io). MCP clients authenticate via OAuth — you'll be guided through a login flow on first use. For the OpenClaw skill (REST API), you'll also need an [API key](https://messari.io/api).
+Sign up at [messari.io](https://messari.io) and get an [API key](https://messari.io/api).
 
 ### 2. Set up your client
 
