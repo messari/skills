@@ -6,7 +6,7 @@ Model Context Protocol (MCP) integrations for [Messari](https://messari.io) — 
 
 ### [`@messari/sdk-ts-mcp`](https://docs.messari.io/mcp-server/hosted)
 
-Messari's hosted MCP server. Gives any MCP-compatible AI client (Claude Code, Cursor, Codex, etc.) direct access to Messari's data stack:
+Messari's hosted MCP server. Gives any MCP-compatible AI client direct access to Messari's data stack:
 
 - **AI** — Chat completions trained on 30TB+ of structured and unstructured crypto data
 - **Signal** — Social sentiment, token mindshare, trending narratives
@@ -20,15 +20,7 @@ Full documentation: **[docs.messari.io/mcp-server/hosted](https://docs.messari.i
 
 ### [`openclaw-skill/`](./openclaw-skill/)
 
-An [OpenClaw](https://openclaw.ai) / [ClawHub](https://clawhub.ai) skill that wraps Messari's REST API directly. Since OpenClaw does not natively support MCP, this skill provides endpoint routing, authentication guidance, and full API reference documentation so AI agents can call Messari's REST API via standard HTTP requests.
-
-For clients that natively support MCP (Claude Code, Cursor, Codex, etc.), use the MCP server above instead.
-
-Install via ClawHub:
-
-```bash
-clawhub install messari/messari-crypto
-```
+An [OpenClaw](https://openclaw.ai) / [ClawHub](https://clawhub.ai) skill that wraps Messari's REST API directly. OpenClaw does not natively support MCP, so this skill provides endpoint routing, authentication, and API reference documentation for standard HTTP requests.
 
 ## Quick Start
 
@@ -36,16 +28,55 @@ clawhub install messari/messari-crypto
 
 Sign up at [messari.io/api](https://messari.io/api). You'll also need Messari AI credits for the AI completion endpoints.
 
-### 2. Choose your integration method
+### 2. Set up your client
 
-**For MCP-compatible clients** (Claude Code, Cursor, Codex), add this to your MCP client config:
+#### Claude / Claude Code
+
+Run from your terminal:
+
+```bash
+claude mcp add messari_sdk_ts_api \
+  -e MESSARI_SDK_API_KEY=<YOUR_API_KEY> \
+  -- npx -y @messari/sdk-ts-mcp --client=claude --tools=dynamic
+```
+
+Or add to your project's `.mcp.json`:
+
+```json
+{
+  "messari_sdk_ts_api": {
+    "command": "npx",
+    "args": ["-y", "@messari/sdk-ts-mcp", "--client=claude", "--tools=dynamic"],
+    "env": {
+      "MESSARI_SDK_API_KEY": "<YOUR_API_KEY>"
+    }
+  }
+}
+```
+
+#### Codex
+
+Add to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.messari_sdk_ts_api]
+command = "npx"
+args = ["-y", "@messari/sdk-ts-mcp", "--tools=dynamic"]
+
+[mcp_servers.messari_sdk_ts_api.env]
+MESSARI_SDK_API_KEY = "<YOUR_API_KEY>"
+```
+
+#### Cursor
+
+Add to `.cursor/mcp.json` (project-level) or `~/.cursor/mcp.json` (global):
 
 ```json
 {
   "mcpServers": {
     "messari_sdk_ts_api": {
       "command": "npx",
-      "args": ["-y", "@messari/sdk-ts-mcp", "--client=claude", "--tools=dynamic"],
+      "args": ["-y", "@messari/sdk-ts-mcp", "--tools=dynamic"],
       "env": {
         "MESSARI_SDK_API_KEY": "<YOUR_API_KEY>"
       }
@@ -54,13 +85,15 @@ Sign up at [messari.io/api](https://messari.io/api). You'll also need Messari AI
 }
 ```
 
-**For OpenClaw**, install the skill and set your API key:
+#### OpenClaw
+
+OpenClaw does not support MCP. Install the skill instead:
 
 ```bash
 clawhub install messari/messari-crypto
 ```
 
-The skill routes requests to `https://api.messari.io` with the `x-messari-api-key` header.
+The skill calls `https://api.messari.io` directly with the `x-messari-api-key` header. See [`openclaw-skill/`](./openclaw-skill/) for details.
 
 ### 3. Start asking questions
 
@@ -75,8 +108,8 @@ The skill routes requests to `https://api.messari.io` with the `x-messari-api-ke
 
 Don't need every service? Use `--resource` flags:
 
-```json
-"args": ["-y", "@messari/sdk-ts-mcp@latest", "--resource", "'ai.*'"]
+```
+--resource 'ai.*'
 ```
 
 Available filters: `ai.*`, `signal.*`, `metrics.*`, `news.*`, `research.*`, `stablecoins.*`, `derivatives.*`
