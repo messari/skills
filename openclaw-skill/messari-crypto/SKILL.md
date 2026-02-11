@@ -15,13 +15,13 @@ homepage: https://github.com/messari/skills
 source: https://github.com/messari/skills
 env:
   - name: MESSARI_API_KEY
-    description: Messari API key from messari.io/api
+    description: Messari API key — get one at messari.io/account/api
     required: true
 metadata:
   openclaw:
     env:
       - name: MESSARI_API_KEY
-        description: Messari API key from messari.io/api
+        description: Messari API key — get one at messari.io/account/api
         required: true
 ---
 
@@ -32,7 +32,7 @@ on-chain metrics, sentiment, news, and institutional-grade research without buil
 
 ## Prerequisites
 
-- **Messari API Key** (`MESSARI_API_KEY`) — get one at [messari.io/api](https://messari.io/api). Set this as an environment variable or configure it through your OpenClaw client.
+- **Messari API Key** (`MESSARI_API_KEY`) — [sign up for an API key](https://messari.io/api) or [retrieve your existing key](https://messari.io/account/api). Set this as an environment variable or configure it through your OpenClaw client.
 - **Messari AI Credits** (optional) — a paid usage quota required only for the AI chat completion endpoints. Purchase and manage credits at [messari.io/account](https://messari.io/account). All other endpoints work with just the API key.
 
 ## REST API Overview
@@ -66,7 +66,7 @@ All endpoints accept and return JSON. Use `Content-Type: application/json` for P
 | **Topics** | `/topics/v1/` | Trending topic classes, daily timeseries |
 | **X-Users** | `/signal/v1/x-users/` | Crypto X/Twitter user metrics |
 
-For detailed endpoint documentation, see [references/api_services.md](references/api_services.md).
+For detailed endpoint documentation, see [references/api_services.md](references/api_services.md) or the full [Messari API docs](https://docs.messari.io/introduction).
 
 ## Example Requests
 
