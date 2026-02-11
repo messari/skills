@@ -9,7 +9,14 @@ description: >
   Use when the user asks about crypto markets, token analysis, sentiment, protocol metrics, asset
   research, trending narratives, stablecoin flows, token unlock schedules, fundraising rounds,
   governance events, or any blockchain/crypto data question.
-  Requires a Messari API key and Messari AI credits.
+  Requires a Messari API key (MESSARI_API_KEY). The AI completion endpoints also require
+  purchased Messari AI credits (a paid usage quota managed at messari.io/account).
+homepage: https://github.com/messari/skills
+source: https://github.com/messari/skills
+env:
+  - name: MESSARI_API_KEY
+    description: Messari API key from messari.io/api
+    required: true
 metadata:
   openclaw:
     env:
@@ -25,8 +32,8 @@ on-chain metrics, sentiment, news, and institutional-grade research without buil
 
 ## Prerequisites
 
-- **Messari API Key** — get one at [messari.io/api](https://messari.io/api)
-- **Messari AI Credits** — required for AI completion endpoints
+- **Messari API Key** (`MESSARI_API_KEY`) — get one at [messari.io/api](https://messari.io/api). Set this as an environment variable or configure it through your OpenClaw client.
+- **Messari AI Credits** (optional) — a paid usage quota required only for the AI chat completion endpoints. Purchase and manage credits at [messari.io/account](https://messari.io/account). All other endpoints work with just the API key.
 
 ## REST API Overview
 
