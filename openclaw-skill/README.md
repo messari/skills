@@ -1,4 +1,4 @@
-# Messari Crypto Intel
+# Messari Crypto Intelligence
 
 **Real-time crypto market intelligence for AI agents — powered by Messari's REST API.**
 
