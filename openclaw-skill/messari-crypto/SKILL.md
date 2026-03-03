@@ -11,6 +11,8 @@ description: >
   governance events, or any blockchain/crypto data question.
   Requires a Messari API key (MESSARI_API_KEY). Paid routes may also require Messari AI credits
   and/or x402 request negotiation, where price is discovered at runtime from payment requirements.
+  Current production-configured x402 route patterns include `/ai/v2/chat/completions` and selected
+  `/metrics/v2/` assets, networks, and stablecoins routes.
 homepage: https://github.com/messari/skills
 source: https://github.com/messari/skills
 env:
@@ -54,6 +56,30 @@ Some Messari endpoints support pay-per-request access via x402.
 - Discover payable resources dynamically with `GET https://api.messari.io/.well-known/x402`.
 - Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
 - Do not hardcode x402 prices or payable-route assumptions in this skill.
+
+**Configured x402 endpoint patterns (from `api-gateway/internal/config/registry/production.yaml`, as of March 3, 2026):**
+- `/ai/v2/chat/completions`
+- `/metrics/v2/assets`
+- `/metrics/v2/assets/metrics`
+- `/metrics/v2/assets/*/metrics/*/time-series/5m`
+- `/metrics/v2/assets/*/metrics/*/time-series/15m`
+- `/metrics/v2/assets/*/metrics/*/time-series/1h`
+- `/metrics/v2/assets/*/metrics/*/time-series/1d`
+- `/metrics/v2/assets/*/metrics/*/time-series`
+- `/metrics/v2/assets/details`
+- `/metrics/v2/assets/ath`
+- `/metrics/v2/assets/roi`
+- `/metrics/v2/networks`
+- `/metrics/v2/networks/metrics`
+- `/metrics/v2/networks/*/metrics/*/time-series/5m`
+- `/metrics/v2/networks/*/metrics/*/time-series/15m`
+- `/metrics/v2/networks/*/metrics/*/time-series/1h`
+- `/metrics/v2/networks/*/metrics/*/time-series/1d`
+- `/metrics/v2/networks/*/metrics/*/time-series`
+- `/metrics/v2/stablecoins`
+- `/metrics/v2/stablecoins/metrics`
+- `/metrics/v2/stablecoins/*/metrics/*/time-series/1d`
+- `/metrics/v2/stablecoins/*/metrics/*/time-series`
 
 **Negotiation flow:**
 1. Send the request normally.
