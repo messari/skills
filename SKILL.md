@@ -28,6 +28,22 @@ All endpoints accept and return JSON. Use `Content-Type: application/json` for P
 
 **API key:** The user needs a Messari API key from [messari.io/api](https://messari.io/api). If no key is available, ask the user to provide one before making requests.
 
+## x402 Payments
+
+Some Messari endpoints support pay-per-request access via x402.
+
+- Discover payable resources dynamically with `GET https://api.messari.io/.well-known/x402`.
+- Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
+- Do not hardcode x402 prices or payable-route assumptions in this skill.
+
+**Negotiation flow:**
+1. Send the request normally.
+2. If the response is `402 Payment Required`, parse the payment requirements from the response body and the `Payment-Required` header.
+3. Create/sign the payment payload and retry with `Payment-Signature` (legacy compatibility: `X-PAYMENT`).
+4. Continue once the retried request succeeds.
+
+**Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
+
 ---
 
 ## Services and Endpoints
@@ -38,7 +54,7 @@ Chat completions trained on 30TB+ of structured and unstructured crypto data —
 
 Route general or open-ended crypto questions here first. This service synthesizes across all other data sources.
 
-Requires Messari AI credits.
+AI usage is paid. Depending on account and route policy, access may require Messari AI credits and/or x402 negotiation.
 
 | Endpoint | Method | Description |
 |---|---|---|

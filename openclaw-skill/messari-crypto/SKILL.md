@@ -9,8 +9,8 @@ description: >
   Use when the user asks about crypto markets, token analysis, sentiment, protocol metrics, asset
   research, trending narratives, stablecoin flows, token unlock schedules, fundraising rounds,
   governance events, or any blockchain/crypto data question.
-  Requires a Messari API key (MESSARI_API_KEY). The AI completion endpoints also require
-  purchased Messari AI credits (a paid usage quota managed at messari.io/account).
+  Requires a Messari API key (MESSARI_API_KEY). Paid routes may also require Messari AI credits
+  and/or x402 request negotiation, where price is discovered at runtime from payment requirements.
 homepage: https://github.com/messari/skills
 source: https://github.com/messari/skills
 env:
@@ -33,7 +33,7 @@ on-chain metrics, sentiment, news, and institutional-grade research without buil
 ## Prerequisites
 
 - **Messari API Key** (`MESSARI_API_KEY`) — [sign up for an API key](https://messari.io/api) or [retrieve your existing key](https://messari.io/account/api). Set this as an environment variable or configure it through your OpenClaw client.
-- **Messari AI Credits** (optional) — a paid usage quota required only for the AI chat completion endpoints. Purchase and manage credits at [messari.io/account](https://messari.io/account). All other endpoints work with just the API key.
+- **Paid access support** (optional) — some paid routes may require Messari AI credits and/or x402 negotiation. If using credit-based access, purchase and manage credits at [messari.io/account](https://messari.io/account).
 
 ## REST API Overview
 
@@ -46,6 +46,22 @@ x-messari-api-key: <YOUR_API_KEY>
 ```
 
 All endpoints accept and return JSON. Use `Content-Type: application/json` for POST requests.
+
+## x402 Payments
+
+Some Messari endpoints support pay-per-request access via x402.
+
+- Discover payable resources dynamically with `GET https://api.messari.io/.well-known/x402`.
+- Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
+- Do not hardcode x402 prices or payable-route assumptions in this skill.
+
+**Negotiation flow:**
+1. Send the request normally.
+2. If the response is `402 Payment Required`, parse the payment requirements from the response body and the `Payment-Required` header.
+3. Create/sign the payment payload and retry with `Payment-Signature` (legacy compatibility: `X-PAYMENT`).
+4. Continue once the retried request succeeds.
+
+**Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
 
 ## Service Routing Table
 

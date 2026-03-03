@@ -5,6 +5,22 @@ Detailed breakdown of each service available through the Messari REST API.
 **Base URL:** `https://api.messari.io`
 **Auth Header:** `x-messari-api-key: <YOUR_API_KEY>`
 
+## x402 Payments
+
+Some Messari endpoints support pay-per-request access via x402.
+
+- Discover payable resources dynamically with `GET https://api.messari.io/.well-known/x402`.
+- Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
+- Do not hardcode x402 prices or payable-route assumptions in this reference.
+
+**Negotiation flow:**
+1. Send the request normally.
+2. If the response is `402 Payment Required`, parse the payment requirements from the response body and the `Payment-Required` header.
+3. Create/sign the payment payload and retry with `Payment-Signature` (legacy compatibility: `X-PAYMENT`).
+4. Continue once the retried request succeeds.
+
+**Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
+
 ---
 
 ## AI Service
@@ -17,7 +33,7 @@ research reports, newsletters, podcasts, and curated third-party content (news, 
 **Use for:** open-ended crypto questions, synthesis across multiple data sources, market analysis,
 protocol comparisons, narrative summaries.
 
-**Requires:** Messari AI credits.
+**Requires:** Paid access (for example, Messari AI credits and/or x402 negotiation depending on account and route policy).
 
 | Endpoint | Method | Description |
 |---|---|---|
