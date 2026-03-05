@@ -3,7 +3,14 @@
 Detailed breakdown of each service available through the Messari REST API.
 
 **Base URL:** `https://api.messari.io`
-**Auth Header:** `x-messari-api-key: <YOUR_API_KEY>`
+**API-key header (API-key mode):** `x-messari-api-key: <YOUR_API_KEY>`
+
+## Credential Policy
+
+- For x402-enabled routes, configure at least one credential: `MESSARI_API_KEY` or `X402_PRIVATE_KEY`.
+- Endpoints marked `api_key`-only require `MESSARI_API_KEY`.
+- For credit-metered endpoints (for example, Messari AI), API-key access may consume Messari AI credits; x402 does not require pre-purchased credits.
+- Never commit secret values; use env var placeholders only (for example `$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`).
 
 ## x402 Payments
 
@@ -34,7 +41,7 @@ research reports, newsletters, podcasts, and curated third-party content (news, 
 **Use for:** open-ended crypto questions, synthesis across multiple data sources, market analysis,
 protocol comparisons, narrative summaries.
 
-**Requires:** Paid access (for example, Messari AI credits and/or x402 negotiation depending on account and route policy).
+**Requires:** Paid access via either API-key credit billing or x402 negotiation. On credit-metered routes, API-key access may require Messari AI credits; x402 access does not require pre-purchased credits.
 
 | Endpoint | Method | Authentication Method | Description |
 |---|---|---|---|

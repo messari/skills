@@ -1,29 +1,8 @@
 ---
 name: messari-crypto
-description: >
-  Crypto market intelligence powered by Messari's REST API. Provides real-time access to
-  Messari AI (chat completions over 30TB+ crypto data), Signal (sentiment, mindshare, trending
-  narratives), Metrics (prices, volumes, fundamentals for 34,000+ assets across 210+ exchanges),
-  News, Research, Stablecoins, Exchanges, Networks, Protocols, Token Unlocks, Fundraising, Intel,
-  Topics, and X-Users data.
-  Use when the user asks about crypto markets, token analysis, sentiment, protocol metrics, asset
-  research, trending narratives, stablecoin flows, token unlock schedules, fundraising rounds,
-  governance events, or any blockchain/crypto data question.
-  Requires a Messari API key (MESSARI_API_KEY). Paid routes may also require Messari AI credits
-  and/or x402 request negotiation, where price is discovered at runtime from payment requirements.
-  Authentication methods are documented per service in the Service Routing Table.
+description: Messari crypto market intelligence via REST API with one-of credentials for x402-enabled routes (MESSARI_API_KEY or X402_PRIVATE_KEY); use for AI, metrics, signal, news, research, stablecoins, exchanges, networks, protocols, token unlocks, fundraising, intel, topics, and X-users data.
 homepage: https://github.com/messari/skills
-source: https://github.com/messari/skills
-env:
-  - name: MESSARI_API_KEY
-    description: Messari API key — get one at messari.io/account/api
-    required: true
-metadata:
-  openclaw:
-    env:
-      - name: MESSARI_API_KEY
-        description: Messari API key — get one at messari.io/account/api
-        required: true
+metadata: {"openclaw":{"homepage":"https://github.com/messari/skills","primaryEnv":"MESSARI_API_KEY"}}
 ---
 
 # Messari Crypto Intel
@@ -33,18 +12,24 @@ on-chain metrics, sentiment, news, and institutional-grade research without buil
 
 ## Prerequisites
 
-- **Messari API Key** (`MESSARI_API_KEY`) — [sign up for an API key](https://messari.io/api) or [retrieve your existing key](https://messari.io/account/api). Set this as an environment variable or configure it through your OpenClaw client.
-- **Paid access support** (optional) — some paid routes may require Messari AI credits and/or x402 negotiation. If using credit-based access, purchase and manage credits at [messari.io/account](https://messari.io/account).
+- **Credential Mode A: API key** (`MESSARI_API_KEY`) — [sign up for an API key](https://messari.io/api) or [retrieve your existing key](https://messari.io/account/api). On credit-metered endpoints (for example, Messari AI), API-key access may require Messari AI credits (manage credits at [messari.io/account](https://messari.io/account)).
+- **Credential Mode B: x402 pay-per-request** (`X402_PRIVATE_KEY`) — use x402 negotiation on x402-enabled routes; this flow does not require pre-purchased Messari AI credits.
+- **Coverage note:** For full endpoint coverage, configure API key; x402-only credentials are limited to x402-enabled routes.
 
 ## REST API Overview
 
 **Base URL:** `https://api.messari.io`
 
-**Authentication:** Include your API key in every request:
+**Authentication modes:**
+- **API key mode:** include API key header:
 
 ```
 x-messari-api-key: <YOUR_API_KEY>
 ```
+
+- **x402 mode:** send request normally, handle `402 Payment Required`, then retry with `Payment-Signature` (legacy: `X-PAYMENT`).
+
+**Secrets guardrail:** Never commit secret values. Use env vars only and placeholders like `$MESSARI_API_KEY` and `$X402_PRIVATE_KEY` in docs/examples.
 
 All endpoints accept and return JSON. Use `Content-Type: application/json` for POST requests.
 
@@ -56,6 +41,7 @@ Some Messari endpoints support pay-per-request access via x402.
 - Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
 - Do not hardcode x402 prices or payable-route assumptions in this skill.
 - Use the Service Routing Table below as the authoritative service-level view of currently supported authentication methods.
+- On x402-enabled routes, x402 is an alternative to API-key credit billing and does not require pre-purchased Messari AI credits.
 
 **Negotiation flow:**
 1. Send the request normally.

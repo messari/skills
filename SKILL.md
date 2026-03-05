@@ -10,7 +10,7 @@ If your client supports the Model Context Protocol, connect to Messari's hosted 
 
 **Server URL:** `https://mcp.messari.io/mcp`
 
-Requires a Messari API key. Get one at [messari.io/api](https://messari.io/api).
+Hosted MCP access uses API-key authentication. Get a key at [messari.io/api](https://messari.io/api).
 
 ### Option B: REST API (Direct HTTP)
 
@@ -18,15 +18,25 @@ If your client does not support MCP, call Messari's REST API directly.
 
 **Base URL:** `https://api.messari.io`
 
-**Authentication:** Include the API key in every request:
+**Authentication modes:**
+- **API key mode:** include API key header:
 
 ```
 x-messari-api-key: <API_KEY>
 ```
 
+- **x402 mode:** send request normally, handle `402 Payment Required`, then retry with `Payment-Signature` (legacy: `X-PAYMENT`).
+
 All endpoints accept and return JSON. Use `Content-Type: application/json` for POST requests.
 
-**API key:** The user needs a Messari API key from [messari.io/api](https://messari.io/api). If no key is available, ask the user to provide one before making requests.
+**Credentials:** For x402-enabled routes, use either `MESSARI_API_KEY` or `X402_PRIVATE_KEY`. Endpoints marked `api_key`-only require `MESSARI_API_KEY`. If required credentials are missing, ask the user to provide them before making requests.
+
+### Credential Modes
+
+- **API-key mode (`MESSARI_API_KEY`)**: Works for all `api_key` endpoints. Credit-metered endpoints (for example, Messari AI) may require Messari AI credits.
+- **x402 mode (`X402_PRIVATE_KEY`)**: Works on x402-enabled endpoints via runtime payment negotiation and does not require pre-purchased Messari AI credits.
+- **Coverage caveat:** x402-only credentials cannot call `api_key`-only endpoints.
+- **Secrets guardrail:** Never commit secret values. Use env vars only and placeholders like `$MESSARI_API_KEY` and `$X402_PRIVATE_KEY` in docs/examples.
 
 ## x402 Payments
 
@@ -55,7 +65,7 @@ Chat completions trained on 30TB+ of structured and unstructured crypto data —
 
 Route general or open-ended crypto questions here first. This service synthesizes across all other data sources.
 
-AI usage is paid. Depending on account and route policy, access may require Messari AI credits and/or x402 negotiation.
+AI usage is paid. For credit-metered AI routes, API-key access may require Messari AI credits; x402 access uses runtime payment negotiation and does not require pre-purchased credits.
 
 | Endpoint | Method | Authentication Method | Description |
 |---|---|---|---|
