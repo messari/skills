@@ -11,8 +11,7 @@ description: >
   governance events, or any blockchain/crypto data question.
   Requires a Messari API key (MESSARI_API_KEY). Paid routes may also require Messari AI credits
   and/or x402 request negotiation, where price is discovered at runtime from payment requirements.
-  Current production-configured x402 route patterns include `/ai/v2/chat/completions` and selected
-  `/metrics/v2/` assets, networks, and stablecoins routes.
+  Authentication methods are documented per service in the Service Routing Table.
 homepage: https://github.com/messari/skills
 source: https://github.com/messari/skills
 env:
@@ -56,30 +55,7 @@ Some Messari endpoints support pay-per-request access via x402.
 - Discover payable resources dynamically with `GET https://api.messari.io/.well-known/x402`.
 - Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
 - Do not hardcode x402 prices or payable-route assumptions in this skill.
-
-**Configured x402 endpoint patterns (from `api-gateway/internal/config/registry/production.yaml`, as of March 3, 2026):**
-- `/ai/v2/chat/completions`
-- `/metrics/v2/assets`
-- `/metrics/v2/assets/metrics`
-- `/metrics/v2/assets/*/metrics/*/time-series/5m`
-- `/metrics/v2/assets/*/metrics/*/time-series/15m`
-- `/metrics/v2/assets/*/metrics/*/time-series/1h`
-- `/metrics/v2/assets/*/metrics/*/time-series/1d`
-- `/metrics/v2/assets/*/metrics/*/time-series`
-- `/metrics/v2/assets/details`
-- `/metrics/v2/assets/ath`
-- `/metrics/v2/assets/roi`
-- `/metrics/v2/networks`
-- `/metrics/v2/networks/metrics`
-- `/metrics/v2/networks/*/metrics/*/time-series/5m`
-- `/metrics/v2/networks/*/metrics/*/time-series/15m`
-- `/metrics/v2/networks/*/metrics/*/time-series/1h`
-- `/metrics/v2/networks/*/metrics/*/time-series/1d`
-- `/metrics/v2/networks/*/metrics/*/time-series`
-- `/metrics/v2/stablecoins`
-- `/metrics/v2/stablecoins/metrics`
-- `/metrics/v2/stablecoins/*/metrics/*/time-series/1d`
-- `/metrics/v2/stablecoins/*/metrics/*/time-series`
+- Use the Service Routing Table below as the authoritative service-level view of currently supported authentication methods.
 
 **Negotiation flow:**
 1. Send the request normally.
@@ -91,22 +67,22 @@ Some Messari endpoints support pay-per-request access via x402.
 
 ## Service Routing Table
 
-| Service | Base Path | Use When |
-|---|---|---|
-| **AI** | `/ai/` | General crypto questions, synthesis across data sources |
-| **Signal** | `/signal/v1/` | Sentiment, mindshare, trending narratives |
-| **Metrics** | `/metrics/v2/` | Price, volume, market cap, fundamentals |
-| **News** | `/news/v1/` | Real-time crypto news, breaking events |
-| **Research** | `/research/v1/` | Institutional reports, protocol deep dives |
-| **Stablecoins** | `/stablecoins/v2/` | Stablecoin supply, per-chain breakdowns |
-| **Exchanges** | `/exchanges/v2/` | Exchange volume, metrics, timeseries |
-| **Networks** | `/networks/v2/` | L1/L2 network metrics, timeseries |
-| **Protocols** | `/protocols/v2/` | DeFi protocol metrics (DEX, lending, staking) |
-| **Token Unlocks** | `/token-unlocks/v1/` | Vesting schedules, unlock events |
-| **Fundraising** | `/fundraising/v1/` | Funding rounds, investors, M&A |
-| **Intel** | `/intel/v1/` | Governance events, protocol updates |
-| **Topics** | `/topics/v1/` | Trending topic classes, daily timeseries |
-| **X-Users** | `/signal/v1/x-users/` | Crypto X/Twitter user metrics |
+| Service | Base Path | Authentication Method | Use When |
+|---|---|---|---|
+| **AI** | `/ai/` | `api_key`, `x402` | General crypto questions, synthesis across data sources |
+| **Signal** | `/signal/v1/` | `api_key`, `x402` | Sentiment, mindshare, trending narratives |
+| **Metrics** | `/metrics/v2/` | `api_key`, `x402` | Price, volume, market cap, fundamentals |
+| **News** | `/news/v1/` | `api_key`, `x402` | Real-time crypto news, breaking events |
+| **Research** | `/research/v1/` | `api_key` | Institutional reports, protocol deep dives |
+| **Stablecoins** | `/metrics/v2/stablecoins/` | `api_key`, `x402` | Stablecoin supply, per-chain breakdowns |
+| **Exchanges** | `/metrics/v1/exchanges/` | `api_key` | Exchange volume, metrics, timeseries |
+| **Networks** | `/metrics/v2/networks/` | `api_key`, `x402` | L1/L2 network metrics, timeseries |
+| **Protocols** | `/metrics/v2/protocols/` | `api_key` | DeFi protocol metrics (DEX, lending, staking) |
+| **Token Unlocks** | `/token-unlocks/v1/` | `api_key`, `x402` | Vesting schedules, unlock events |
+| **Fundraising** | `/funding/v1/` | `api_key`, `x402` | Funding rounds, investors, M&A |
+| **Intel** | `/intel/v1/` | `api_key` | Governance events, protocol updates |
+| **Topics** | `/topics/v1/` | `api_key` | Trending topic classes, daily timeseries |
+| **X-Users** | `/signal/v1/x-users/` | `api_key`, `x402` | Crypto X/Twitter user metrics |
 
 For detailed endpoint documentation, see [references/api_services.md](references/api_services.md) or the full [Messari API docs](https://docs.messari.io/introduction).
 
@@ -135,7 +111,7 @@ curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
 ### Signal Mindshare Gainers
 
 ```bash
-curl "https://api.messari.io/signal/v1/assets/gainers-losers?type=mindshare&limit=10" \
+curl "https://api.messari.io/signal/v1/assets/mindshare-gainers-24h?limit=10" \
   -H "x-messari-api-key: $MESSARI_API_KEY"
 ```
 

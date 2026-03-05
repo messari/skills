@@ -35,30 +35,7 @@ Some Messari endpoints support pay-per-request access via x402.
 - Discover payable resources dynamically with `GET https://api.messari.io/.well-known/x402`.
 - Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
 - Do not hardcode x402 prices or payable-route assumptions in this skill.
-
-**Configured x402 endpoint patterns (from `api-gateway/internal/config/registry/production.yaml`, as of March 3, 2026):**
-- `/ai/v2/chat/completions`
-- `/metrics/v2/assets`
-- `/metrics/v2/assets/metrics`
-- `/metrics/v2/assets/*/metrics/*/time-series/5m`
-- `/metrics/v2/assets/*/metrics/*/time-series/15m`
-- `/metrics/v2/assets/*/metrics/*/time-series/1h`
-- `/metrics/v2/assets/*/metrics/*/time-series/1d`
-- `/metrics/v2/assets/*/metrics/*/time-series`
-- `/metrics/v2/assets/details`
-- `/metrics/v2/assets/ath`
-- `/metrics/v2/assets/roi`
-- `/metrics/v2/networks`
-- `/metrics/v2/networks/metrics`
-- `/metrics/v2/networks/*/metrics/*/time-series/5m`
-- `/metrics/v2/networks/*/metrics/*/time-series/15m`
-- `/metrics/v2/networks/*/metrics/*/time-series/1h`
-- `/metrics/v2/networks/*/metrics/*/time-series/1d`
-- `/metrics/v2/networks/*/metrics/*/time-series`
-- `/metrics/v2/stablecoins`
-- `/metrics/v2/stablecoins/metrics`
-- `/metrics/v2/stablecoins/*/metrics/*/time-series/1d`
-- `/metrics/v2/stablecoins/*/metrics/*/time-series`
+- Use the endpoint tables under `## Services and Endpoints` as the authoritative documentation for currently supported authentication methods per endpoint.
 
 **Negotiation flow:**
 1. Send the request normally.
@@ -80,10 +57,11 @@ Route general or open-ended crypto questions here first. This service synthesize
 
 AI usage is paid. Depending on account and route policy, access may require Messari AI credits and/or x402 negotiation.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/ai/v1/chat/completions` | POST | Chat completion against Messari's crypto data warehouse |
-| `/ai/openai/chat/completions` | POST | OpenAI-compatible chat completion endpoint |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/ai/v2/chat/completions` | POST | `api_key`, `x402` | Messari-native chat completions with structured response objects (x402-capable route) |
+| `/ai/v1/chat/completions` | POST | `api_key` | Legacy Messari chat completion endpoint over Messari's crypto data corpus |
+| `/ai/openai/chat/completions` | POST | `api_key` | OpenAI-compatible chat completion response format for drop-in client support |
 
 **POST body:**
 - `messages` — array of `{role, content}` message objects
@@ -104,13 +82,15 @@ Price, volume, market cap, and fundamental metrics for 34,000+ assets across 210
 
 Route quantitative and comparative questions here — price lookups, performance comparisons, ROI, all-time highs, historical timeseries.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/metrics/v2/assets` | GET | List assets with market metrics |
-| `/metrics/v2/assets/{assetId}` | GET | Detailed metrics for a specific asset |
-| `/metrics/v2/assets/{assetId}/roi` | GET | ROI data for an asset |
-| `/metrics/v2/assets/{assetId}/ath` | GET | All-time high data for an asset |
-| `/metrics/v2/assets/{assetId}/timeseries` | GET | Historical metric timeseries |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/metrics/v2/assets` | GET | `api_key`, `x402` | List assets with market and fundamental metrics |
+| `/metrics/v2/assets/metrics` | GET | `api_key`, `x402` | List dataset slugs and supported granularities for asset timeseries |
+| `/metrics/v2/assets/ath` | GET | `api_key`, `x402` | Return all-time-high snapshots and drawdown context for selected assets |
+| `/metrics/v2/assets/details` | GET | `api_key`, `x402` | Return rich point-in-time details for selected assets |
+| `/metrics/v2/assets/roi` | GET | `api_key`, `x402` | Return multi-window ROI snapshots for selected assets |
+| `/metrics/v2/assets/{assetID}/metrics/{datasetSlug}/time-series` | GET | `api_key`, `x402` | Return historical timeseries for an asset metric dataset |
+| `/metrics/v2/assets/{assetID}/metrics/{datasetSlug}/time-series/{granularity}` | GET | `api_key`, `x402` | Return asset metric timeseries at explicit granularity (`5m`, `15m`, `1h`, `1d`) |
 
 **Query parameters:**
 - `assetSlugs` — comma-separated slugs (e.g., `bitcoin,ethereum`)
@@ -133,20 +113,25 @@ Real-time social intelligence — sentiment scoring, mindshare tracking, trendin
 
 Route questions about market sentiment, social buzz, what's trending, mindshare gainers/losers here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/signal/v1/assets` | GET | List assets with signal metrics |
-| `/signal/v1/assets/{assetId}` | GET | Signal metrics for a specific asset |
-| `/signal/v1/assets/{assetId}/timeseries` | GET | Historical signal timeseries |
-| `/signal/v1/assets/gainers-losers` | GET | Top mindshare gainers and losers |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/signal/v1/assets` | GET | `api_key`, `x402` | Ranked asset signal feed (mindshare, sentiment, momentum) with sorting/filtering |
+| `/signal/v1/assets/{assetID}` | GET | `api_key`, `x402` | Detailed social-signal profile for one asset |
+| `/signal/v1/assets/mindshare-gainers-24h` | GET | `api_key`, `x402` | Assets with the largest mindshare gains over the last 24 hours |
+| `/signal/v1/assets/mindshare-gainers-7d` | GET | `api_key`, `x402` | Assets with the largest mindshare gains over the last 7 days |
+| `/signal/v1/assets/mindshare-losers-24h` | GET | `api_key`, `x402` | Assets with the largest mindshare losses over the last 24 hours |
+| `/signal/v1/assets/mindshare-losers-7d` | GET | `api_key`, `x402` | Assets with the largest mindshare losses over the last 7 days |
+| `/signal/v1/assets/time-series/1h` | GET | `api_key`, `x402` | Hourly asset social-signal timeseries (x402-capable route) |
+| `/signal/v1/assets/time-series/1d` | GET | `api_key`, `x402` | Daily asset social-signal timeseries (x402-capable route) |
 
 **Query parameters:**
-- `type` — signal type (e.g., `mindshare`)
-- `limit` — number of results
-- `start`, `end` — date range (ISO 8601)
+- `assetIds` — comma-separated asset IDs/slugs to filter list responses
+- `sort`, `sortDirection` — ranking field and direction for list responses
+- `limit`, `page` — pagination controls
+- `start`, `end` — date range for time-series calls (RFC3339 or unix timestamp)
 
 ```bash
-curl "https://api.messari.io/signal/v1/assets/gainers-losers?type=mindshare&limit=10" \
+curl "https://api.messari.io/signal/v1/assets/mindshare-gainers-24h?limit=10" \
   -H "x-messari-api-key: $MESSARI_API_KEY"
 ```
 
@@ -158,10 +143,11 @@ Real-time crypto news aggregation — breaking events, project updates, regulato
 
 Route questions about recent headlines, current events, or "what happened with X" here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/news/v1/news/feed` | GET | Aggregated crypto news feed |
-| `/news/v1/news/sources` | GET | List available news sources |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/news/v1/news/assets` | GET | `api_key` | List assets currently tagged in news coverage |
+| `/news/v1/news/feed` | GET | `api_key`, `x402` | Paginated cross-source crypto news feed |
+| `/news/v1/news/sources` | GET | `api_key`, `x402` | List source metadata and IDs for feed filtering |
 
 **Query parameters:**
 - `assetSlugs` — filter news by asset
@@ -181,11 +167,11 @@ Institutional-grade reports — sector deep dives, protocol diligence, quarterly
 
 Route questions about fundamental research, due diligence, analyst opinions, and sector analysis here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/research/v1/reports` | GET | List research reports |
-| `/research/v1/reports/{reportId}` | GET | Get a specific report |
-| `/research/v1/reports/tags` | GET | List available report tags |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/research/v1/reports` | GET | `api_key` | List research reports with filters like asset IDs and tags |
+| `/research/v1/reports/{reportId}` | GET | `api_key` | Retrieve a specific research report by report ID |
+| `/research/v1/reports/tags` | GET | `api_key` | List research tags available for report filtering |
 
 **Query parameters:**
 - `tags` — filter by report tags
@@ -200,11 +186,12 @@ On-chain metrics, historical timeseries, and per-chain breakdowns for 25+ stable
 
 Route stablecoin-specific questions here — supply, flows, chain-level breakdowns, market share.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/stablecoins/v2/stablecoins` | GET | List stablecoins with metrics |
-| `/stablecoins/v2/stablecoins/{stablecoinId}` | GET | Detailed metrics for a stablecoin |
-| `/stablecoins/v2/stablecoins/{stablecoinId}/timeseries` | GET | Historical timeseries |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/metrics/v2/stablecoins` | GET | `api_key`, `x402` | List stablecoins with supply and market metrics |
+| `/metrics/v2/stablecoins/metrics` | GET | `api_key`, `x402` | List dataset slugs and supported granularities for stablecoin timeseries |
+| `/metrics/v2/stablecoins/{entityIdentifier}/metrics/{datasetSlug}/time-series` | GET | `api_key`, `x402` | Return historical timeseries for a stablecoin metric dataset |
+| `/metrics/v2/stablecoins/{entityIdentifier}/metrics/{datasetSlug}/time-series/1d` | GET | `api_key`, `x402` | Return daily stablecoin metric timeseries via explicit `1d` route |
 
 **Query parameters:**
 - `metrics` — specific stablecoin metrics
@@ -221,18 +208,18 @@ Exchange-level volume, metrics, and historical timeseries across 210+ exchanges.
 
 Route questions about exchange volumes, comparisons, or exchange-specific data here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/exchanges/v2/exchanges` | GET | List exchanges with metrics |
-| `/exchanges/v2/exchanges/{exchangeId}` | GET | Detailed metrics for an exchange |
-| `/exchanges/v2/exchanges/{exchangeId}/timeseries` | GET | Historical timeseries |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/metrics/v1/exchanges` | GET | `api_key` | List exchanges with spot/futures volume and open-interest context |
+| `/metrics/v1/exchanges/metrics` | GET | `api_key` | List available metric datasets for exchange timeseries |
+| `/metrics/v1/exchanges/{exchangeIdentifier}` | GET | `api_key` | Retrieve one exchange by slug or ID with current metrics |
+| `/metrics/v1/exchanges/{entityIdentifier}/metrics/{datasetSlug}/time-series/{granularity}` | GET | `api_key` | Exchange metric timeseries at selected granularity |
 
 **Query parameters:**
-- `exchangeSlugs` — comma-separated exchange slugs
-- `metrics` — specific exchange metrics
-- `start`, `end` — date range (ISO 8601)
-- `interval` — timeseries interval
-- `limit`, `page` — pagination
+- `type` — filter exchanges by type
+- `limit`, `page` — pagination controls
+- `start`, `end` — date range for timeseries calls
+- `granularity` — timeseries interval for metric calls
 
 ---
 
@@ -242,11 +229,12 @@ L1/L2 blockchain network metrics — chain-level activity, fees, active addresse
 
 Route questions about blockchain networks, chain comparisons, or on-chain metrics here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/networks/v2/networks` | GET | List networks with metrics |
-| `/networks/v2/networks/{networkId}` | GET | Detailed metrics for a network |
-| `/networks/v2/networks/{networkId}/timeseries` | GET | Historical timeseries |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/metrics/v2/networks` | GET | `api_key`, `x402` | List blockchain networks with activity, fee, and usage metrics |
+| `/metrics/v2/networks/metrics` | GET | `api_key`, `x402` | List dataset slugs and supported granularities for network timeseries |
+| `/metrics/v2/networks/{entityIdentifier}/metrics/{datasetSlug}/time-series` | GET | `api_key`, `x402` | Return historical timeseries for a network metric dataset |
+| `/metrics/v2/networks/{entityIdentifier}/metrics/{datasetSlug}/time-series/{granularity}` | GET | `api_key`, `x402` | Return network metric timeseries at explicit granularity (`5m`, `15m`, `1h`, `1d`) |
 
 **Query parameters:**
 - `networkSlugs` — comma-separated network slugs
@@ -263,19 +251,29 @@ DeFi protocol metrics across DEXs, lending, liquid staking, and bridges.
 
 Route DeFi-specific questions here — TVL, protocol comparisons, category-specific data.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/protocols/v2/protocols` | GET | List protocols with metrics |
-| `/protocols/v2/protocols/{protocolId}` | GET | Detailed metrics for a protocol |
-| `/protocols/v2/protocols/dex` | GET | DEX-specific metrics |
-| `/protocols/v2/protocols/lending` | GET | Lending protocol metrics |
-| `/protocols/v2/protocols/interop` | GET | Bridge/interoperability metrics |
-| `/protocols/v2/protocols/liquid-staking` | GET | Liquid staking metrics |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/metrics/v2/protocols` | GET | `api_key` | List all protocols with aggregated core metrics across deployments |
+| `/metrics/v2/protocols/metrics` | GET | `api_key` | List available core protocol timeseries metric datasets |
+| `/metrics/v2/protocols/{protocolIdentifier}/metrics/core/time-series/{granularity}` | GET | `api_key` | Core protocol metric timeseries for a specific protocol |
+| `/metrics/v2/protocols/dex` | GET | `api_key` | List DEX protocols with aggregated category metrics |
+| `/metrics/v2/protocols/dex/metrics` | GET | `api_key` | List available DEX protocol timeseries metric datasets |
+| `/metrics/v2/protocols/{protocolIdentifier}/metrics/dex/time-series/{granularity}` | GET | `api_key` | DEX protocol metric timeseries for a specific protocol |
+| `/metrics/v2/protocols/lending` | GET | `api_key` | List lending protocols with aggregated category metrics |
+| `/metrics/v2/protocols/lending/metrics` | GET | `api_key` | List available lending protocol timeseries metric datasets |
+| `/metrics/v2/protocols/{protocolIdentifier}/metrics/lending/time-series/{granularity}` | GET | `api_key` | Lending protocol metric timeseries for a specific protocol |
+| `/metrics/v2/protocols/interop` | GET | `api_key` | List interoperability/bridge protocols with aggregated category metrics |
+| `/metrics/v2/protocols/interop/metrics` | GET | `api_key` | List available interoperability protocol timeseries metric datasets |
+| `/metrics/v2/protocols/{protocolIdentifier}/metrics/interop/time-series/{granularity}` | GET | `api_key` | Interoperability protocol metric timeseries for a specific protocol |
+| `/metrics/v2/protocols/liquid-staking` | GET | `api_key` | List liquid-staking protocols with aggregated category metrics |
+| `/metrics/v2/protocols/liquid-staking/metrics` | GET | `api_key` | List available liquid-staking protocol timeseries metric datasets |
+| `/metrics/v2/protocols/{protocolIdentifier}/metrics/liquid-staking/time-series/{granularity}` | GET | `api_key` | Liquid-staking protocol metric timeseries for a specific protocol |
 
 **Query parameters:**
-- `protocolSlugs` — comma-separated protocol slugs
-- `metrics` — specific protocol metrics
-- `limit`, `page` — pagination
+- `sort`, `order` — ranking column and sort direction for list endpoints
+- `limit`, `page` — pagination controls
+- `protocolIdentifier` — protocol slug or ID for timeseries endpoints
+- `granularity`, `start`, `end` — timeseries interval and date range
 
 ---
 
@@ -285,12 +283,13 @@ Vesting schedules, upcoming unlock events, and supply pressure analysis.
 
 Route questions about token unlocks, vesting, or upcoming supply events here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/token-unlocks/v1/assets` | GET | List assets with unlock data |
-| `/token-unlocks/v1/assets/{assetId}` | GET | Unlock details for an asset |
-| `/token-unlocks/v1/assets/{assetId}/events` | GET | Upcoming unlock events |
-| `/token-unlocks/v1/assets/{assetId}/vesting` | GET | Full vesting schedule |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/token-unlocks/v1/assets` | GET | `api_key`, `x402` | List assets covered by unlock and allocation datasets |
+| `/token-unlocks/v1/allocations` | GET | `api_key`, `x402` | Allocation breakdown by bucket/category for selected assets |
+| `/token-unlocks/v1/assets/{assetId}/events` | GET | `api_key`, `x402` | Upcoming token unlock events for a specific asset |
+| `/token-unlocks/v1/assets/{assetId}/unlocks` | GET | `api_key`, `x402` | Historical unlock timeseries for a specific asset |
+| `/token-unlocks/v1/assets/{assetId}/vesting-schedule` | GET | `api_key`, `x402` | Forward-looking vesting schedule timeseries for a specific asset |
 
 **Query parameters:**
 - `assetSlugs` — comma-separated asset slugs
@@ -305,14 +304,15 @@ Funding rounds, investors, funds, organizations, projects, and M&A activity.
 
 Route questions about who invested in what, fundraising rounds, investor activity, or M&A here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/fundraising/v1/rounds` | GET | List fundraising rounds |
-| `/fundraising/v1/organizations` | GET | List organizations |
-| `/fundraising/v1/projects` | GET | List projects that raised funding |
-| `/fundraising/v1/investors` | GET | List investors and activity |
-| `/fundraising/v1/funds` | GET | List investment funds |
-| `/fundraising/v1/mergers-acquisitions` | GET | List M&A transactions |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/funding/v1/rounds` | GET | `api_key`, `x402` | Query funding rounds by stage, date, amount, and participants |
+| `/funding/v1/rounds/investors` | GET | `api_key`, `x402` | Return investors participating in rounds matching applied filters |
+| `/funding/v1/mergers-and-acquisitions` | GET | `api_key`, `x402` | Query crypto M&A deals with acquirer/target metadata |
+| `/funding/v1/organizations` | GET | `api_key`, `x402` | Query organizations active in fundraising and investment activity |
+| `/funding/v1/projects` | GET | `api_key`, `x402` | Query projects and their fundraising attributes |
+| `/funding/v1/funds` | GET | `api_key`, `x402` | Query investment funds and fund-level metadata |
+| `/funding/v1/funds/managers` | GET | `api_key`, `x402` | Return organizations/people managing funds matching filters |
 
 **Query parameters:**
 - `assetSlugs` — filter by related asset
@@ -329,11 +329,12 @@ Governance events, protocol upgrades, and key project milestones.
 
 Route questions about governance proposals, protocol upgrades, or project events here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/intel/v1/events` | GET | List intel events |
-| `/intel/v1/events/{eventId}` | GET | Details for a specific event |
-| `/intel/v1/assets` | GET | List assets with intel data |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/intel/v1/events` | GET | `api_key` | List intel events (legacy GET route; prefer POST for advanced filtering) |
+| `/intel/v1/events` | POST | `api_key` | Preferred event query route with body-based filters |
+| `/intel/v1/events/{eventId}` | GET | `api_key` | Retrieve one event with its update history |
+| `/intel/v1/assets` | GET | `api_key` | List assets covered by the Intel event dataset |
 
 **Query parameters:**
 - `assetSlugs` — filter by asset
@@ -349,16 +350,17 @@ Trending topic classification and daily timeseries.
 
 Route questions about trending narratives or topic momentum here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/topics/v1/classes` | GET | List topic classes/categories |
-| `/topics/v1/current` | GET | Currently trending topics |
-| `/topics/v1/timeseries` | GET | Daily topic trend timeseries |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/topics/v1/classes` | GET | `api_key` | List available topic classes (taxonomy labels) |
+| `/topics/v1/current` | GET | `api_key` | Snapshot of currently trending topics with rank and metadata |
+| `/topics/v1/daily` | GET | `api_key` | Historical topic timeseries over a specified date range |
 
 **Query parameters:**
-- `classIds` — filter by topic class
-- `start`, `end` — date range (ISO 8601)
-- `limit` — number of results
+- `classes` — filter current topics by class names
+- `assetIDs` — filter topics by associated assets (UUID, slug, or symbol)
+- `start`, `end`, `granularity` — time window controls for `/topics/v1/daily`
+- `sort`, `limit`, `page` — sorting and pagination for `/topics/v1/current`
 
 ---
 
@@ -368,15 +370,16 @@ Crypto X/Twitter user metrics and influence tracking.
 
 Route questions about crypto influencers, social account metrics, or X/Twitter activity here.
 
-| Endpoint | Method | Description |
-|---|---|---|
-| `/signal/v1/x-users` | GET | List crypto X users with metrics |
-| `/signal/v1/x-users/{userId}` | GET | Metrics for a specific X user |
-| `/signal/v1/x-users/{userId}/timeseries` | GET | Historical metrics for an X user |
+| Endpoint | Method | Authentication Method | Description |
+|---|---|---|---|
+| `/signal/v1/x-users` | GET | `api_key`, `x402` | Ranked crypto X-user signal feed with engagement and mindshare metrics |
+| `/signal/v1/x-users/time-series/1d` | GET | `api_key`, `x402` | Daily X-user social-signal timeseries (x402-capable route) |
+| `/signal/v1/x-users/{xUserID}` | GET | `api_key`, `x402` | Detailed social-signal profile for one X user |
 
 **Query parameters:**
-- `limit`, `page` — pagination
-- `start`, `end` — date range (ISO 8601)
+- `limit`, `page` — pagination controls
+- `sort`, `sortDirection`, `accountType` — ranking/filter controls for list endpoint
+- `start`, `end` — date range for timeseries calls
 
 ---
 
