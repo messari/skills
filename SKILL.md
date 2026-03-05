@@ -55,7 +55,7 @@ Some Messari endpoints support pay-per-request access via x402.
 
 **Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
 
-### Request Patterns (curl)
+### Request Patterns (curl + TypeScript)
 
 **API-key request pattern (baseline):**
 
@@ -66,7 +66,7 @@ curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
 
 Use API-key mode for endpoints marked `api_key`-only.
 
-**x402 request pattern (3-step negotiation):**
+**x402 request pattern (discovery + TypeScript payment client):**
 
 1. Discover payable routes:
 
@@ -74,27 +74,46 @@ Use API-key mode for endpoints marked `api_key`-only.
 curl "https://api.messari.io/.well-known/x402"
 ```
 
-2. Send the initial request (may return `402 Payment Required` and `Payment-Required`):
+2. Use an x402-enabled client for paid requests:
 
 ```bash
-curl -i -X POST "https://api.messari.io/ai/v2/chat/completions" \
-  -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"Summarize ETH market sentiment today."}]}'
+npm install @x402/fetch @x402/evm viem
 ```
 
-3. Retry with signed payment proof:
+```typescript
+import { wrapFetchWithPaymentFromConfig } from '@x402/fetch';
+import { ExactEvmScheme } from '@x402/evm';
+import { privateKeyToAccount } from 'viem/accounts';
 
-```bash
-curl -i -X POST "https://api.messari.io/ai/v2/chat/completions" \
-  -H "Content-Type: application/json" \
-  -H "Payment-Signature: $PAYMENT_SIGNATURE" \
-  -H "X-PAYMENT: $PAYMENT_SIGNATURE" \
-  -d '{"messages":[{"role":"user","content":"Summarize ETH market sentiment today."}]}'
+const privateKey = process.env.X402_PRIVATE_KEY as `0x${string}` | undefined;
+if (!privateKey) {
+  throw new Error('Set X402_PRIVATE_KEY');
+}
+
+const account = privateKeyToAccount(privateKey);
+const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
+  schemes: [{ network: 'eip155:8453', client: new ExactEvmScheme(account) }],
+});
+
+const response = await fetchWithPayment('https://api.messari.io/ai/v2/chat/completions', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: 'Summarize ETH market sentiment today.' }],
+    stream: false,
+  }),
+});
+
+if (!response.ok) {
+  throw new Error(`Request failed: ${response.status}`);
+}
+
+console.log(await response.json());
 ```
 
-`$PAYMENT_SIGNATURE` is generated from runtime 402 requirements (including `Payment-Required`) using your client wallet/signing logic and signer key material (for example `$X402_PRIVATE_KEY`).
+`@x402/fetch` handles runtime `402 Payment Required` negotiation, parses `Payment-Required`, and retries with `Payment-Signature` (legacy compatibility: `X-PAYMENT`) after signing through `@x402/evm`.
 
-**Secrets note:** Never commit credentials or signatures. Use placeholders only (`$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`, `$PAYMENT_SIGNATURE`).
+**Secrets note:** Never commit credentials or signatures. Use placeholders only (`$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`).
 
 ---
 
