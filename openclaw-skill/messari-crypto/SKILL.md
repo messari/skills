@@ -51,6 +51,47 @@ Some Messari endpoints support pay-per-request access via x402.
 
 **Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
 
+### Request Patterns (curl)
+
+**API-key request pattern (baseline):**
+
+```bash
+curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
+  -H "x-messari-api-key: $MESSARI_API_KEY"
+```
+
+Use API-key mode for endpoints marked `api_key`-only.
+
+**x402 request pattern (3-step negotiation):**
+
+1. Discover payable routes:
+
+```bash
+curl "https://api.messari.io/.well-known/x402"
+```
+
+2. Send the initial request (may return `402 Payment Required` and `Payment-Required`):
+
+```bash
+curl -i -X POST "https://api.messari.io/ai/v2/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Summarize ETH market sentiment today."}]}'
+```
+
+3. Retry with signed payment proof:
+
+```bash
+curl -i -X POST "https://api.messari.io/ai/v2/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Payment-Signature: $PAYMENT_SIGNATURE" \
+  -H "X-PAYMENT: $PAYMENT_SIGNATURE" \
+  -d '{"messages":[{"role":"user","content":"Summarize ETH market sentiment today."}]}'
+```
+
+`$PAYMENT_SIGNATURE` is generated from runtime 402 requirements (including `Payment-Required`) using your client wallet/signing logic and signer key material (for example `$X402_PRIVATE_KEY`).
+
+**Secrets note:** Never commit credentials or signatures. Use placeholders only (`$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`, `$PAYMENT_SIGNATURE`).
+
 ## Service Routing Table
 
 | Service | Base Path | Authentication Method | Use When |
@@ -74,39 +115,7 @@ For detailed endpoint documentation, see [references/api_services.md](references
 
 ## Example Requests
 
-### AI Chat Completion
-
-```bash
-curl -X POST "https://api.messari.io/ai/v1/chat/completions" \
-  -H "x-messari-api-key: $MESSARI_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      {"role": "user", "content": "What is the bull case for ETH right now?"}
-    ]
-  }'
-```
-
-### Asset Metrics Lookup
-
-```bash
-curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
-  -H "x-messari-api-key: $MESSARI_API_KEY"
-```
-
-### Signal Mindshare Gainers
-
-```bash
-curl "https://api.messari.io/signal/v1/assets/mindshare-gainers-24h?limit=10" \
-  -H "x-messari-api-key: $MESSARI_API_KEY"
-```
-
-### News Feed
-
-```bash
-curl "https://api.messari.io/news/v1/news/feed?limit=20" \
-  -H "x-messari-api-key: $MESSARI_API_KEY"
-```
+Use the `### Request Patterns (curl)` section above for both API-key and x402 authentication flow examples. Swap endpoint path and body per service from the routing table.
 
 ## Routing Guidance
 

@@ -55,6 +55,47 @@ Some Messari endpoints support pay-per-request access via x402.
 
 **Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
 
+### Request Patterns (curl)
+
+**API-key request pattern (baseline):**
+
+```bash
+curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
+  -H "x-messari-api-key: $MESSARI_API_KEY"
+```
+
+Use API-key mode for endpoints marked `api_key`-only.
+
+**x402 request pattern (3-step negotiation):**
+
+1. Discover payable routes:
+
+```bash
+curl "https://api.messari.io/.well-known/x402"
+```
+
+2. Send the initial request (may return `402 Payment Required` and `Payment-Required`):
+
+```bash
+curl -i -X POST "https://api.messari.io/ai/v2/chat/completions" \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Summarize ETH market sentiment today."}]}'
+```
+
+3. Retry with signed payment proof:
+
+```bash
+curl -i -X POST "https://api.messari.io/ai/v2/chat/completions" \
+  -H "Content-Type: application/json" \
+  -H "Payment-Signature: $PAYMENT_SIGNATURE" \
+  -H "X-PAYMENT: $PAYMENT_SIGNATURE" \
+  -d '{"messages":[{"role":"user","content":"Summarize ETH market sentiment today."}]}'
+```
+
+`$PAYMENT_SIGNATURE` is generated from runtime 402 requirements (including `Payment-Required`) using your client wallet/signing logic and signer key material (for example `$X402_PRIVATE_KEY`).
+
+**Secrets note:** Never commit credentials or signatures. Use placeholders only (`$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`, `$PAYMENT_SIGNATURE`).
+
 ---
 
 ## Services and Endpoints
@@ -76,13 +117,6 @@ AI usage is paid. For credit-metered AI routes, API-key access may require Messa
 **POST body:**
 - `messages` — array of `{role, content}` message objects
 - `stream` — boolean, enable streaming responses
-
-```bash
-curl -X POST "https://api.messari.io/ai/v1/chat/completions" \
-  -H "x-messari-api-key: $MESSARI_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"messages": [{"role": "user", "content": "What is the bull case for ETH right now?"}]}'
-```
 
 ---
 
@@ -110,11 +144,6 @@ Route quantitative and comparative questions here — price lookups, performance
 - `interval` — timeseries interval (`1d`, `1w`)
 - `limit`, `page` — pagination
 
-```bash
-curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
-  -H "x-messari-api-key: $MESSARI_API_KEY"
-```
-
 ---
 
 ### Signal Service
@@ -140,11 +169,6 @@ Route questions about market sentiment, social buzz, what's trending, mindshare 
 - `limit`, `page` — pagination controls
 - `start`, `end` — date range for time-series calls (RFC3339 or unix timestamp)
 
-```bash
-curl "https://api.messari.io/signal/v1/assets/mindshare-gainers-24h?limit=10" \
-  -H "x-messari-api-key: $MESSARI_API_KEY"
-```
-
 ---
 
 ### News Service
@@ -163,11 +187,6 @@ Route questions about recent headlines, current events, or "what happened with X
 - `assetSlugs` — filter news by asset
 - `sourceIds` — filter by news source
 - `limit`, `page` — pagination
-
-```bash
-curl "https://api.messari.io/news/v1/news/feed?limit=20" \
-  -H "x-messari-api-key: $MESSARI_API_KEY"
-```
 
 ---
 
