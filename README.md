@@ -94,6 +94,7 @@ clawhub install messari/messari-crypto
 ```
 
 The skill calls `https://api.messari.io` directly with the `x-messari-api-key` header. See [`openclaw-skill/`](./openclaw-skill/) for details.
+Some REST endpoints also support x402, but the OpenClaw skill guidance assumes direct HTTP with `MESSARI_API_KEY` unless the host already provides x402 payment/signing support.
 
 ### 3. Start asking questions
 

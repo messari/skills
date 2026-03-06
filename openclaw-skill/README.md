@@ -43,7 +43,8 @@ No data pipelines. No custom integrations. Just plug in your API key and ask que
 ## Requirements
 
 - A **Messari API key** ([get one here](https://messari.io/api))
-- **Messari AI credits** for AI completion endpoints
+- **Messari AI credits** for API-key access to AI completion endpoints
+- Optional: an x402-capable host/runtime for endpoints that support `x402`; x402 does not require pre-purchased AI credits, but it is not the default OpenClaw path.
 
 ---
 
@@ -57,7 +58,7 @@ clawhub install messari/messari-crypto
 
 ### 2. Set your API key
 
-Set the `MESSARI_API_KEY` environment variable, or configure it through your OpenClaw client. The skill passes this key as the `x-messari-api-key` header on every request.
+Set the `MESSARI_API_KEY` environment variable, or configure it through your OpenClaw client. This is the standard OpenClaw path, and the skill passes this key as the `x-messari-api-key` header on requests that use API-key authentication.
 
 ### 3. Start asking questions
 
@@ -79,18 +80,20 @@ This skill wraps Messari's REST API directly. It provides:
 2. **Service routing guidance** — helps your agent pick the right Messari endpoint (AI vs. Metrics vs. Signal, etc.) based on the query type
 3. **Reference documentation** — detailed breakdown of all 14 API services with endpoint paths, methods, and parameters
 
-Your agent makes standard HTTP requests to `https://api.messari.io` with the `x-messari-api-key` header. No MCP server, no npm packages, no local processes — just REST calls.
+Your agent makes standard HTTP requests to `https://api.messari.io` with the `x-messari-api-key` header as the default path. No MCP server, no npm packages, no local processes — just REST calls. Some endpoints also support x402, but only when the host runtime already provides x402 signing/payment support.
 
 ---
 
 ## Authentication
 
-Every request requires the `x-messari-api-key` header:
+Standard OpenClaw usage sends the `x-messari-api-key` header:
 
 ```bash
 curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin" \
   -H "x-messari-api-key: $MESSARI_API_KEY"
 ```
+
+Some endpoints also support x402, but the skill does not assume npm/package installation or bundled x402 client libraries. Use x402 only if your host runtime already supports the `402 Payment Required` negotiation flow.
 
 ---
 

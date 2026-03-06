@@ -1,6 +1,6 @@
 ---
 name: messari-crypto
-description: Messari crypto market intelligence via REST API with one-of credentials for x402-enabled routes (MESSARI_API_KEY or X402_PRIVATE_KEY); use for AI, metrics, signal, news, research, stablecoins, exchanges, networks, protocols, token unlocks, fundraising, intel, topics, and X-users data.
+description: Messari crypto market intelligence via REST API for OpenClaw, with `MESSARI_API_KEY` as the primary runnable path and optional x402 support on marked endpoints when the host runtime already supports x402 signing.
 homepage: https://github.com/messari/skills
 metadata: {"openclaw":{"homepage":"https://github.com/messari/skills","primaryEnv":"MESSARI_API_KEY"}}
 ---
@@ -12,9 +12,10 @@ on-chain metrics, sentiment, news, and institutional-grade research without buil
 
 ## Prerequisites
 
-- **Credential Mode A: API key** (`MESSARI_API_KEY`) — [sign up for an API key](https://messari.io/api) or [retrieve your existing key](https://messari.io/account/api). On credit-metered endpoints (for example, Messari AI), API-key access may require Messari AI credits (manage credits at [messari.io/account](https://messari.io/account)).
-- **Credential Mode B: x402 pay-per-request** (`X402_PRIVATE_KEY`) — use x402 negotiation on x402-enabled routes; this flow does not require pre-purchased Messari AI credits.
+- **Credential Mode A: API key** (`MESSARI_API_KEY`) — standard OpenClaw path. [Sign up for an API key](https://messari.io/api) or [retrieve your existing key](https://messari.io/account/api). On credit-metered endpoints (for example, Messari AI), API-key access may require Messari AI credits (manage credits at [messari.io/account](https://messari.io/account)).
+- **Credential Mode B: x402 pay-per-request** (`X402_PRIVATE_KEY`) — optional path for endpoints marked `x402`, only when the host runtime already supports x402 signing/payment negotiation. This flow does not require pre-purchased Messari AI credits.
 - **Coverage note:** For full endpoint coverage, configure API key; x402-only credentials are limited to x402-enabled routes.
+- **Runtime note:** This skill does not assume npm/package installation or local x402 client setup.
 
 ## REST API Overview
 
@@ -27,7 +28,7 @@ on-chain metrics, sentiment, news, and institutional-grade research without buil
 x-messari-api-key: <YOUR_API_KEY>
 ```
 
-- **x402 mode:** send request normally, handle `402 Payment Required`, then retry with `Payment-Signature` (legacy: `X-PAYMENT`).
+- **x402 mode:** optional. Send request normally, handle `402 Payment Required`, then retry through a host/runtime that can submit `Payment-Signature` (legacy: `X-PAYMENT`).
 
 **Secrets guardrail:** Never commit secret values. Use env vars only and placeholders like `$MESSARI_API_KEY` and `$X402_PRIVATE_KEY` in docs/examples.
 
@@ -42,6 +43,7 @@ Some Messari endpoints support pay-per-request access via x402.
 - Do not hardcode x402 prices or payable-route assumptions in this skill.
 - Use the Service Routing Table below as the authoritative service-level view of currently supported authentication methods.
 - On x402-enabled routes, x402 is an alternative to API-key credit billing and does not require pre-purchased Messari AI credits.
+- This skill documents x402 negotiation behavior, but does not assume package installation or bundled x402 client libraries in the OpenClaw runtime.
 
 **Negotiation flow:**
 1. Send the request normally.
@@ -51,7 +53,7 @@ Some Messari endpoints support pay-per-request access via x402.
 
 **Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
 
-### Request Patterns (curl + TypeScript)
+### Request Patterns (curl)
 
 **API-key request pattern (baseline):**
 
@@ -62,7 +64,7 @@ curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
 
 Use API-key mode for endpoints marked `api_key`-only.
 
-**x402 request pattern (discovery + TypeScript payment client):**
+**x402 request pattern (discovery + runtime-capable client):**
 
 1. Discover payable routes:
 
@@ -70,44 +72,11 @@ Use API-key mode for endpoints marked `api_key`-only.
 curl "https://api.messari.io/.well-known/x402"
 ```
 
-2. Use an x402-enabled client for paid requests:
+2. Send the request to an endpoint marked `x402`.
+3. If the response is `402 Payment Required`, parse the `Payment-Required` header and response body requirements.
+4. Retry through an x402-capable client/runtime that can sign the payment and submit `Payment-Signature` (legacy compatibility: `X-PAYMENT`).
 
-```bash
-npm install @x402/fetch @x402/evm viem
-```
-
-```typescript
-import { wrapFetchWithPaymentFromConfig } from '@x402/fetch';
-import { ExactEvmScheme } from '@x402/evm';
-import { privateKeyToAccount } from 'viem/accounts';
-
-const privateKey = process.env.X402_PRIVATE_KEY as `0x${string}` | undefined;
-if (!privateKey) {
-  throw new Error('Set X402_PRIVATE_KEY');
-}
-
-const account = privateKeyToAccount(privateKey);
-const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
-  schemes: [{ network: 'eip155:8453', client: new ExactEvmScheme(account) }],
-});
-
-const response = await fetchWithPayment('https://api.messari.io/ai/v2/chat/completions', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    messages: [{ role: 'user', content: 'Summarize ETH market sentiment today.' }],
-    stream: false,
-  }),
-});
-
-if (!response.ok) {
-  throw new Error(`Request failed: ${response.status}`);
-}
-
-console.log(await response.json());
-```
-
-`@x402/fetch` handles runtime `402 Payment Required` negotiation, parses `Payment-Required`, and retries with `Payment-Signature` (legacy compatibility: `X-PAYMENT`) after signing through `@x402/evm`.
+If your OpenClaw host runtime does not already support x402 signing, fall back to `MESSARI_API_KEY`. For concrete x402 client implementation details, use the [Messari x402 guide](https://docs.messari.io/api-reference/x402-payments) or a host-provided x402 client.
 
 **Secrets note:** Never commit credentials or signatures. Use placeholders only (`$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`).
 
@@ -134,7 +103,7 @@ For detailed endpoint documentation, see [references/api_services.md](references
 
 ## Example Requests
 
-Use the `### Request Patterns (curl + TypeScript)` section above for both API-key and x402 authentication flow examples. Swap endpoint path and body per service from the routing table.
+Use the `### Request Patterns (curl)` section above for both API-key and x402 authentication flow guidance. Swap endpoint path and body per service from the routing table.
 
 ## Routing Guidance
 
