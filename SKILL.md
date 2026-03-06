@@ -25,18 +25,17 @@ If your client does not support MCP, call Messari's REST API directly.
 x-messari-api-key: <API_KEY>
 ```
 
-- **x402 mode:** optional. Send request normally, handle `402 Payment Required`, then retry through a host/runtime that can submit `Payment-Signature` (legacy: `X-PAYMENT`).
+- **x402 mode:** send request normally, handle `402 Payment Required`, then retry with `Payment-Signature` (legacy: `X-PAYMENT`).
 
 All endpoints accept and return JSON. Use `Content-Type: application/json` for POST requests.
 
-**Credentials:** Primary path: `MESSARI_API_KEY` over standard HTTP. For endpoints marked `x402`, you may alternatively use `X402_PRIVATE_KEY` only if your host runtime already provides x402 payment/signing support. Endpoints marked `api_key`-only require `MESSARI_API_KEY`. If required credentials are missing, ask the user to provide them before making requests.
+**Credentials:** For x402-enabled routes, use either `MESSARI_API_KEY` or `X402_PRIVATE_KEY`. Endpoints marked `api_key`-only require `MESSARI_API_KEY`. If required credentials are missing, ask the user to provide them before making requests.
 
 ### Credential Modes
 
-- **API-key mode (`MESSARI_API_KEY`)**: Standard runnable path for all `api_key` endpoints. Credit-metered endpoints (for example, Messari AI) may require Messari AI credits.
-- **x402 mode (`X402_PRIVATE_KEY`)**: Optional path for endpoints marked `x402`, only when the host runtime already supports x402 signing/payment negotiation. This path does not require pre-purchased Messari AI credits.
+- **API-key mode (`MESSARI_API_KEY`)**: Works for all `api_key` endpoints. Credit-metered endpoints (for example, Messari AI) may require Messari AI credits.
+- **x402 mode (`X402_PRIVATE_KEY`)**: Works on x402-enabled endpoints via runtime payment negotiation and does not require pre-purchased Messari AI credits.
 - **Coverage caveat:** x402-only credentials cannot call `api_key`-only endpoints.
-- **Runtime caveat:** This skill does not assume npm/package installation or local x402 client setup.
 - **Secrets guardrail:** Never commit secret values. Use env vars only and placeholders like `$MESSARI_API_KEY` and `$X402_PRIVATE_KEY` in docs/examples.
 
 ## x402 Payments
@@ -47,7 +46,6 @@ Some Messari endpoints support pay-per-request access via x402.
 - Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
 - Do not hardcode x402 prices or payable-route assumptions in this skill.
 - Use the endpoint tables under `## Services and Endpoints` as the authoritative documentation for currently supported authentication methods per endpoint.
-- This skill documents x402 negotiation behavior, but does not assume package installation or bundled x402 client libraries in the agent runtime.
 
 **Negotiation flow:**
 1. Send the request normally.
@@ -57,7 +55,7 @@ Some Messari endpoints support pay-per-request access via x402.
 
 **Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
 
-### Request Patterns (curl)
+### Request Patterns (curl + TypeScript)
 
 **API-key request pattern (baseline):**
 
@@ -68,7 +66,7 @@ curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
 
 Use API-key mode for endpoints marked `api_key`-only.
 
-**x402 request pattern (discovery + runtime-capable client):**
+**x402 request pattern (discovery + TypeScript payment client):**
 
 1. Discover payable routes:
 
@@ -76,11 +74,44 @@ Use API-key mode for endpoints marked `api_key`-only.
 curl "https://api.messari.io/.well-known/x402"
 ```
 
-2. Send the request to an endpoint marked `x402`.
-3. If the response is `402 Payment Required`, parse the `Payment-Required` header and response body requirements.
-4. Retry through an x402-capable client/runtime that can sign the payment and submit `Payment-Signature` (legacy compatibility: `X-PAYMENT`).
+2. Use an x402-enabled client for paid requests:
 
-If your runtime does not already support x402 signing, fall back to `MESSARI_API_KEY`. For concrete x402 client implementation details, use the [Messari x402 guide](https://docs.messari.io/api-reference/x402-payments) or a host-provided x402 client.
+```bash
+npm install @x402/fetch @x402/evm viem
+```
+
+```typescript
+import { wrapFetchWithPaymentFromConfig } from '@x402/fetch';
+import { ExactEvmScheme } from '@x402/evm';
+import { privateKeyToAccount } from 'viem/accounts';
+
+const privateKey = process.env.X402_PRIVATE_KEY as `0x${string}` | undefined;
+if (!privateKey) {
+  throw new Error('Set X402_PRIVATE_KEY');
+}
+
+const account = privateKeyToAccount(privateKey);
+const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
+  schemes: [{ network: 'eip155:8453', client: new ExactEvmScheme(account) }],
+});
+
+const response = await fetchWithPayment('https://api.messari.io/ai/v2/chat/completions', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: 'Summarize ETH market sentiment today.' }],
+    stream: false,
+  }),
+});
+
+if (!response.ok) {
+  throw new Error(`Request failed: ${response.status}`);
+}
+
+console.log(await response.json());
+```
+
+`@x402/fetch` handles runtime `402 Payment Required` negotiation, parses `Payment-Required`, and retries with `Payment-Signature` (legacy compatibility: `X-PAYMENT`) after signing through `@x402/evm`.
 
 **Secrets note:** Never commit credentials or signatures. Use placeholders only (`$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`).
 

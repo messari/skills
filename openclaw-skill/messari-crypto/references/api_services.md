@@ -7,8 +7,7 @@ Detailed breakdown of each service available through the Messari REST API.
 
 ## Credential Policy
 
-- Primary path: `MESSARI_API_KEY` over standard HTTP.
-- For endpoints marked `x402`, you may alternatively use `X402_PRIVATE_KEY` only if the host/runtime already provides x402 payment/signing support.
+- For x402-enabled routes, configure at least one credential: `MESSARI_API_KEY` or `X402_PRIVATE_KEY`.
 - Endpoints marked `api_key`-only require `MESSARI_API_KEY`.
 - For credit-metered endpoints (for example, Messari AI), API-key access may consume Messari AI credits; x402 does not require pre-purchased credits.
 - Never commit secret values; use env var placeholders only (for example `$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`).
@@ -21,7 +20,6 @@ Some Messari endpoints support pay-per-request access via x402.
 - Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
 - Do not hardcode x402 prices or payable-route assumptions in this reference.
 - Use the endpoint tables in this reference as the authoritative view of currently supported authentication methods per endpoint.
-- x402 execution depends on a host/runtime that can sign x402 payments and submit `Payment-Signature`; this reference does not assume package installation or local x402 client setup.
 
 **Negotiation flow:**
 1. Send the request normally.
