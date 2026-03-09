@@ -30,9 +30,8 @@ All endpoints accept and return JSON. Use `Content-Type: application/json` for P
 | User is asking about... | Route to | Base path |
 |---|---|---|
 | General crypto question, synthesis, "what do you think about X" | **AI** | `/ai/` |
-| In-depth research report with citations (async, 5-10 min) | **Deep Research** | `/ai/v1/deep-research` |
+| In-depth research report with citations (async, 5-10 min) | **AI** (Deep Research) | `/ai/v1/deep-research` |
 | Price, volume, market cap, ROI, ATH, performance comparison | **Metrics** | `/metrics/v2/` |
-| Trading pair data, market-specific price and volume | **Markets** | `/metrics/v1/markets` |
 | Sentiment, mindshare, trending tokens, social buzz | **Signal** | `/signal/v1/` |
 | Headlines, recent events, breaking news | **News** | `/news/v1/` |
 | Analyst reports, deep dives, sector overviews | **Research** | `/research/v1/` |
@@ -45,8 +44,6 @@ All endpoints accept and return JSON. Use `Content-Type: application/json` for P
 | Governance events, protocol upgrades | **Intel** | `/intel/v1/` |
 | Trending narratives, topic momentum | **Topics** | `/topics/v1/` |
 | Crypto influencers, X/Twitter accounts | **X-Users** | `/signal/v1/x-users/` |
-| Bulk data download, large historical datasets, CSV/JSONL export | **Bulk Data** | `/bulk/v1/` |
-| Trending questions the community is asking | **Trending Questions** | `/ai/v1/questions/` |
 
 For full endpoint details, parameters, and examples, see [references/endpoints.md](references/endpoints.md).
 
@@ -116,6 +113,5 @@ curl "https://api.messari.io/news/v1/news/feed?limit=20" \
 
 ## Notes
 
-- The **AI** and **Deep Research** endpoints require Messari AI credits (a paid usage quota managed at [messari.io/account](https://messari.io/account)). All other endpoints work with just the API key.
+- The **AI** service endpoints (chat completions and deep research) require Messari AI credits (a paid usage quota managed at [messari.io/account](https://messari.io/account)). All other endpoints work with just the API key.
 - Deep Research jobs are asynchronous — submit a query, then poll for results (5-10 min). Each report costs 500 credits.
-- The **Bulk Data** service requires an appropriate subscription tier for the requested dataset.

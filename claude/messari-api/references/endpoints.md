@@ -6,9 +6,7 @@
 ## Contents
 
 - [AI Service](#ai-service)
-- [Deep Research](#deep-research)
 - [Metrics Service](#metrics-service)
-- [Markets Service](#markets-service)
 - [Signal Service](#signal-service)
 - [News Service](#news-service)
 - [Research Service](#research-service)
@@ -21,15 +19,16 @@
 - [Intel Service](#intel-service)
 - [Topics Service](#topics-service)
 - [X-Users Service](#x-users-service)
-- [Bulk Data Service](#bulk-data-service)
 
 ---
 
 ## AI Service
 
-Chat completions across Messari's full crypto data warehouse. Route general or open-ended crypto questions here first.
+Chat completions and deep research reports across Messari's full crypto data warehouse. Route general or open-ended crypto questions here first.
 
 Requires Messari AI credits.
+
+### Chat Completions
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -51,16 +50,14 @@ Requires Messari AI credits.
 **Trending questions parameters (GET):**
 - `limit` — number of trending questions to return (default: 5)
 
-```bash
-curl -X POST "https://api.messari.io/ai/v1/chat/completions" \
+  ```bash
+  curl -X POST "https://api.messari.io/ai/v1/chat/completions" \
   -H "x-messari-api-key: $MESSARI_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"messages": [{"role": "user", "content": "What is the bull case for ETH right now?"}]}'
 ```
 
----
-
-## Deep Research
+### Deep Research
 
 Asynchronous long-form research reports with citations. Each report costs 500 AI credits and takes 5-10 minutes.
 
@@ -123,22 +120,6 @@ curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
 
 ---
 
-## Markets Service
-
-Exchange-level trading pair data and metrics.
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/metrics/v1/markets` | GET | List exchange market pairs with metrics |
-| `/metrics/v1/markets/{marketIdentifier}` | GET | Detailed metrics for a specific market pair |
-| `/metrics/v1/markets/metrics` | GET | List available market-level metrics |
-
-**Query parameters:**
-- `marketIdentifier` — market pair ID
-- `metrics` — specific market metrics to return
-- `limit`, `page` — pagination
-
----
 
 ## Signal Service
 
@@ -375,20 +356,3 @@ Crypto X/Twitter user metrics and influence tracking.
 - `limit`, `page` — pagination
 - `start`, `end` — date range (ISO 8601)
 
----
-
-## Bulk Data Service
-
-High-performance bulk data download in CSV or JSONL format for large historical datasets.
-
-Requires an appropriate subscription tier for the requested dataset.
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/bulk/v1/datasets` | GET | List available bulk datasets for subscription tier |
-| `/bulk/v1/datasets/{datasetSlug}/{granularity}/data` | GET | Download dataset in CSV or JSONL format |
-
-**Query parameters:**
-- `format` — `csv` or `jsonl`
-- `start`, `end` — date range (ISO 8601)
-- Granularities: `5m`, `15m`, `30m`, `1h`, `1d`
