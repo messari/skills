@@ -52,8 +52,13 @@ All endpoints accept and return JSON. Use `Content-Type: application/json` for P
 | Service | Base Path | Use When |
 |---|---|---|
 | **AI** | `/ai/` | General crypto questions, synthesis across data sources |
+| **AI (v2)** | `/ai/v2/` | Enhanced chat with citations, verbosity control, related questions |
+| **Deep Research** | `/ai/v1/deep-research` | In-depth async research reports (500 credits, 5-10 min) |
+| **Trending Questions** | `/ai/v1/questions/` | Trending crypto questions asked by the community |
+| **Bulk Data** | `/bulk/v1/` | Large-scale dataset downloads (CSV/JSONL) for quant workflows |
 | **Signal** | `/signal/v1/` | Sentiment, mindshare, trending narratives |
 | **Metrics** | `/metrics/v2/` | Price, volume, market cap, fundamentals |
+| **Markets** | `/metrics/v1/markets` | Exchange-level market pair data and metrics |
 | **News** | `/news/v1/` | Real-time crypto news, breaking events |
 | **Research** | `/research/v1/` | Institutional reports, protocol deep dives |
 | **Stablecoins** | `/stablecoins/v2/` | Stablecoin supply, per-chain breakdowns |
@@ -81,6 +86,20 @@ curl -X POST "https://api.messari.io/ai/v1/chat/completions" \
       {"role": "user", "content": "What is the bull case for ETH right now?"}
     ]
   }'
+```
+
+### Deep Research Report
+
+```bash
+# Start a deep research job (async — takes 5-10 minutes)
+curl -X POST "https://api.messari.io/ai/v1/deep-research" \
+  -H "x-messari-api-key: $MESSARI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What are the key risks and opportunities for Ethereum in 2025?"}'
+
+# Poll for the result
+curl "https://api.messari.io/ai/v1/deep-research/{id}" \
+  -H "x-messari-api-key: $MESSARI_API_KEY"
 ```
 
 ### Asset Metrics Lookup
@@ -117,9 +136,11 @@ Use **Metrics** for price/volume/fundamentals. **Exchanges** for exchange-level 
 
 ### Specific asset classes
 **Stablecoins** for stablecoin supply and flows. **Token Unlocks** for vesting schedules and upcoming unlocks.
+**Bulk Data** for large-scale CSV/JSONL dataset downloads.
 
 ### Research, news, and events
 **Research** for deep dives and reports. **News** for real-time events. **Intel** for governance and protocol updates. **Fundraising** for funding rounds and M&A.
+**Deep Research** for long-form, sourced research reports on any crypto topic (async, 5-10 min).
 
 ### Multi-service queries
 Combine services for richer answers. Example — "Is SOL overvalued?":
@@ -127,3 +148,5 @@ Combine services for richer answers. Example — "Is SOL overvalued?":
 2. **Signal** → sentiment and mindshare trend
 3. **Token Unlocks** → upcoming supply pressure
 4. **AI** → synthesize a view from all data
+5. **Deep Research** → commission a full research report with citations
+6. **Bulk Data** → download large datasets for offline analysis

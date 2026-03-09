@@ -23,12 +23,53 @@ protocol comparisons, narrative summaries.
 |---|---|---|
 | `/ai/v1/chat/completions` | POST | Chat completion against Messari's crypto data warehouse |
 | `/ai/openai/chat/completions` | POST | OpenAI-compatible chat completion endpoint |
+| `/ai/v2/chat/completions` | POST | Enhanced chat with citations, verbosity control, related questions |
+| `/ai/v1/questions/trending` | GET | Trending crypto questions asked by the community |
 
 **Key parameters (POST body):**
 - `messages` — array of `{role, content}` message objects
 - `stream` — boolean, enable streaming responses
 
+**Additional v2 parameters (POST body):**
+- `verbosity` — `"succinct"`, `"balanced"`, or `"verbose"` (controls response length)
+- `inline_citations` — boolean, embed source citations inline
+- `generate_related_questions` — boolean, return follow-up question suggestions
+- `response_format` — `"markdown"` or `"plaintext"`
+- `allow_clarification_query` — boolean, allow the model to ask clarifying questions
+
+**Trending questions parameters (GET):**
+- `limit` — number of trending questions to return (default: 5)
+
 ---
+
+## Deep Research Service
+
+Async long-form research reports powered by Messari AI. Each report costs 500 AI credits and takes 5-10 minutes.
+
+**Use for:** in-depth research reports with citations on any crypto topic — protocol deep dives, market theses, risk analysis.
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/ai/v1/deep-research` | POST | Start a new deep research job |
+| `/ai/v1/deep-research` | GET | List your deep research jobs |
+| `/ai/v1/deep-research/{id}` | GET | Get status and results of a research job |
+| `/ai/v1/deep-research/{id}/cancel` | POST | Cancel a running research job |
+
+**POST body parameters:**
+- `query` — (required) the research question
+- `instructions` — (optional) additional context or constraints for the report
+- `job_id` — (optional) existing job ID for follow-up research
+
+**GET list parameters:**
+- `limit` — number of jobs to return
+- `offset` — pagination offset
+- `status` — filter by job status (`queued`, `in_progress`, `completed`, `failed`, `cancelled`)
+
+**Job statuses:** `queued` → `in_progress` → `completed` | `failed` | `cancelled`
+
+**Response (completed job):**
+- `output.report` — full report in markdown
+- `output.sources` — list of cited sources
 
 ## Signal Service
 
@@ -42,6 +83,10 @@ Real-time social intelligence and narrative tracking.
 | `/signal/v1/assets/{assetId}` | GET | Signal metrics for a specific asset |
 | `/signal/v1/assets/{assetId}/timeseries` | GET | Historical signal timeseries for an asset |
 | `/signal/v1/assets/gainers-losers` | GET | Top mindshare gainers and losers |
+| `/signal/v1/assets/mindshare-gainers-24h` | GET | Top mindshare gainers over 24 hours |
+| `/signal/v1/assets/mindshare-gainers-7d` | GET | Top mindshare gainers over 7 days |
+| `/signal/v1/assets/mindshare-losers-24h` | GET | Top mindshare losers over 24 hours |
+| `/signal/v1/assets/mindshare-losers-7d` | GET | Top mindshare losers over 7 days |
 
 **Key query parameters:**
 - `type` — signal type (e.g., `mindshare`)
@@ -65,6 +110,9 @@ Comprehensive quantitative data across the crypto market.
 | `/metrics/v2/assets/{assetId}/roi` | GET | ROI data for an asset |
 | `/metrics/v2/assets/{assetId}/ath` | GET | All-time high data for an asset |
 | `/metrics/v2/assets/{assetId}/timeseries` | GET | Historical metric timeseries for an asset |
+| `/metrics/v1/markets` | GET | List exchange market pairs with metrics |
+| `/metrics/v1/markets/{marketIdentifier}` | GET | Detailed metrics for a specific market pair |
+| `/metrics/v1/markets/metrics` | GET | List available market-level metrics |
 
 **Key query parameters:**
 - `assetSlugs` — comma-separated asset slugs (e.g., `bitcoin,ethereum`)
@@ -212,6 +260,8 @@ Token vesting schedules and unlock events.
 | `/token-unlocks/v1/assets/{assetId}` | GET | Token unlock details for an asset |
 | `/token-unlocks/v1/assets/{assetId}/events` | GET | Upcoming unlock events for an asset |
 | `/token-unlocks/v1/assets/{assetId}/vesting` | GET | Full vesting schedule for an asset |
+| `/token-unlocks/v1/allocations` | GET | Token allocation breakdowns across categories |
+| `/token-unlocks/v1/assets/{assetId}/unlocks` | GET | Specific unlock events for an asset |
 
 **Key query parameters:**
 - `assetSlugs` — comma-separated asset slugs
@@ -234,6 +284,8 @@ Crypto fundraising data including rounds, investors, and M&A activity.
 | `/fundraising/v1/investors` | GET | List investors and their activity |
 | `/fundraising/v1/funds` | GET | List investment funds |
 | `/fundraising/v1/mergers-acquisitions` | GET | List M&A transactions |
+| `/fundraising/v1/rounds/investors` | GET | List investors participating in specific rounds |
+| `/fundraising/v1/funds/managers` | GET | List fund managers and their portfolios |
 
 **Key query parameters:**
 - `assetSlugs` — filter by related asset
@@ -298,3 +350,42 @@ Crypto X/Twitter user metrics and influence tracking.
 **Key query parameters:**
 - `limit`, `page` — pagination
 - `start`, `end` — date range for timeseries (ISO 8601)
+
+---
+
+## Bulk Data Service
+
+Large-scale dataset downloads for quantitative analysis.
+
+**Use for:** downloading full historical datasets in CSV or JSONL format — useful for backtesting, data science, and quant workflows.
+
+**Requires:** appropriate subscription tier for the dataset.
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/bulk/v1/datasets` | GET | List available datasets for your subscription tier |
+| `/bulk/v1/datasets/{datasetSlug}/{granularity}/data` | GET | Download dataset at specified granularity |
+
+**Key query parameters:**
+- `datasetSlug` — dataset identifier
+- `granularity` — time granularity: `5m`, `15m`, `30m`, `1h`, `1d`
+- Output format: CSV or JSONL depending on Accept header
+
+---
+
+## Markets Service
+
+Exchange-level market pair data and metrics.
+
+**Use for:** market-pair-level analysis, exchange trading pair volumes, spread data.
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/metrics/v1/markets` | GET | List exchange market pairs with metrics |
+| `/metrics/v1/markets/{marketIdentifier}` | GET | Detailed metrics for a specific market pair |
+| `/metrics/v1/markets/metrics` | GET | List available market-level metrics |
+
+**Key query parameters:**
+- `marketIdentifier` — market pair ID (e.g., exchange-specific pair identifier)
+- `metrics` — specific market metrics to return
+- `limit`, `page` — pagination

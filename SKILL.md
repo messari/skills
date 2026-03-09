@@ -44,16 +44,48 @@ Requires Messari AI credits.
 |---|---|---|
 | `/ai/v1/chat/completions` | POST | Chat completion against Messari's crypto data warehouse |
 | `/ai/openai/chat/completions` | POST | OpenAI-compatible chat completion endpoint |
+| `/ai/v2/chat/completions` | POST | v2 chat completion with inline citations, related questions, and verbosity control |
+| `/ai/v1/questions/trending` | GET | Suggested questions based on trending crypto topics |
 
 **POST body:**
 - `messages` — array of `{role, content}` message objects
 - `stream` — boolean, enable streaming responses
+- `verbosity` — `succinct`, `balanced`, or `verbose` (v2 only)
+- `inline_citations` — boolean, include citation references in metadata (v2 only)
+- `generate_related_questions` — integer, number of follow-up suggestions (v2 only)
+- `response_format` — `markdown` or `plaintext` (v2 only)
 
 ```bash
 curl -X POST "https://api.messari.io/ai/v1/chat/completions" \
   -H "x-messari-api-key: $MESSARI_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"messages": [{"role": "user", "content": "What is the bull case for ETH right now?"}]}'
+```
+
+**Deep Research** — Generate comprehensive long-form research reports asynchronously (5-10 minutes). Reports include markdown content with cited sources. Costs 500 credits per report; Enterprise teams receive 10 free/month.
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/ai/v1/deep-research` | POST | Create a new deep research job |
+| `/ai/v1/deep-research` | GET | List your deep research jobs |
+| `/ai/v1/deep-research/{id}` | GET | Get job status; includes report when completed |
+| `/ai/v1/deep-research/{id}/cancel` | POST | Cancel a queued or in-progress job |
+
+**POST body (Create):**
+- `query` — research topic or question (required)
+- `instructions` — optional system instructions to guide research style
+- `job_id` — optional, pass existing job ID for follow-up refinement
+
+**Query parameters (List):**
+- `limit` — max results (default 20, max 100)
+- `offset` — pagination offset
+- `status` — filter by: `queued`, `in_progress`, `completed`, `failed`, `cancelled`
+
+```bash
+curl -X POST "https://api.messari.io/ai/v1/deep-research" \
+  -H "x-messari-api-key: $MESSARI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is the current state of liquid staking on Ethereum?"}'
 ```
 
 ---
@@ -71,6 +103,9 @@ Route quantitative and comparative questions here — price lookups, performance
 | `/metrics/v2/assets/{assetId}/roi` | GET | ROI data for an asset |
 | `/metrics/v2/assets/{assetId}/ath` | GET | All-time high data for an asset |
 | `/metrics/v2/assets/{assetId}/timeseries` | GET | Historical metric timeseries |
+| `/metrics/v1/markets` | GET | List trading pairs/markets across exchanges |
+| `/metrics/v1/markets/{marketIdentifier}` | GET | Get a specific trading pair/market |
+| `/metrics/v1/markets/metrics` | GET | List available market timeseries metrics |
 
 **Query parameters:**
 - `assetSlugs` — comma-separated slugs (e.g., `bitcoin,ethereum`)
@@ -99,6 +134,10 @@ Route questions about market sentiment, social buzz, what's trending, mindshare 
 | `/signal/v1/assets/{assetId}` | GET | Signal metrics for a specific asset |
 | `/signal/v1/assets/{assetId}/timeseries` | GET | Historical signal timeseries |
 | `/signal/v1/assets/gainers-losers` | GET | Top mindshare gainers and losers |
+| `/signal/v1/assets/mindshare-gainers-24h` | GET | Assets with biggest mindshare gains (24h) |
+| `/signal/v1/assets/mindshare-gainers-7d` | GET | Assets with biggest mindshare gains (7d) |
+| `/signal/v1/assets/mindshare-losers-24h` | GET | Assets with biggest mindshare losses (24h) |
+| `/signal/v1/assets/mindshare-losers-7d` | GET | Assets with biggest mindshare losses (7d) |
 
 **Query parameters:**
 - `type` — signal type (e.g., `mindshare`)
@@ -251,6 +290,8 @@ Route questions about token unlocks, vesting, or upcoming supply events here.
 | `/token-unlocks/v1/assets/{assetId}` | GET | Unlock details for an asset |
 | `/token-unlocks/v1/assets/{assetId}/events` | GET | Upcoming unlock events |
 | `/token-unlocks/v1/assets/{assetId}/vesting` | GET | Full vesting schedule |
+| `/token-unlocks/v1/allocations` | GET | Get token allocation data across assets |
+| `/token-unlocks/v1/assets/{assetId}/unlocks` | GET | Interval-based unlock timeseries data |
 
 **Query parameters:**
 - `assetSlugs` — comma-separated asset slugs
@@ -273,6 +314,8 @@ Route questions about who invested in what, fundraising rounds, investor activit
 | `/fundraising/v1/investors` | GET | List investors and activity |
 | `/fundraising/v1/funds` | GET | List investment funds |
 | `/fundraising/v1/mergers-acquisitions` | GET | List M&A transactions |
+| `/fundraising/v1/rounds/investors` | GET | Investors that participated in filtered rounds |
+| `/fundraising/v1/funds/managers` | GET | Managers of filtered funds |
 
 **Query parameters:**
 - `assetSlugs` — filter by related asset
@@ -338,6 +381,22 @@ Route questions about crypto influencers, social account metrics, or X/Twitter a
 - `limit`, `page` — pagination
 - `start`, `end` — date range (ISO 8601)
 
+### Bulk Data Service
+
+High-performance bulk data download in CSV or JSONL format. Designed for data scientists, analysts, and researchers needing large historical datasets.
+
+Route bulk download, historical data export, CSV/JSONL dataset requests here.
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/bulk/v1/datasets` | GET | List available bulk datasets for your subscription tier |
+| `/bulk/v1/datasets/{datasetSlug}/{granularity}/data` | GET | Download dataset in CSV or JSONL format |
+
+**Query parameters:**
+- `format` — `csv` or `jsonl`
+- `start`, `end` — date range (ISO 8601)
+- Granularities: `5m`, `15m`, `30m`, `1h`, `1d`
+
 ---
 
 ## Routing Guide
@@ -360,6 +419,9 @@ Use this logic to pick the right service for a query:
 | Governance events, protocol upgrades | **Intel** |
 | Trending narratives, topic momentum | **Topics** |
 | Crypto influencers, X/Twitter accounts | **X-Users** |
+| In-depth research report, comprehensive analysis on a crypto topic | **Deep Research** (under AI) |
+| Bulk data download, large historical datasets, CSV/JSONL export | **Bulk Data** |
+| Trading pair data, market-specific price and volume | **Markets** (under Metrics) |
 
 ### Multi-service queries
 
@@ -387,4 +449,7 @@ When in doubt, start with the **AI** service — it draws from all other sources
 "Give me the latest ecosystem map of Solana."
 "Tell me about the recent investments from a16z crypto."
 "Compare and contrast the native asset functions of BitTensor vs Render."
+"Generate a deep research report on the current state of liquid staking."
+"What are the trending questions in crypto right now?"
+"Download bulk historical price data for Ethereum over the last year."
 ```
