@@ -1,68 +1,101 @@
-# Messari — Crypto Market Intelligence for AI Agents
-
-You are integrating with Messari, the leading crypto data platform. You have access to real-time and historical data across 34,000+ crypto assets, 210+ exchanges, and 14 specialized data services covering market metrics, social sentiment, institutional research, on-chain analytics, fundraising, governance, and more.
-
-## Integration Paths
-
-### Option A: MCP Server (Preferred)
-
-If your client supports the Model Context Protocol, connect to Messari's hosted MCP server.
-
-**Server URL:** `https://mcp.messari.io/mcp`
-
-Requires a Messari API key. Get one at [messari.io/api](https://messari.io/api).
-
-### Option B: REST API (Direct HTTP)
-
-If your client does not support MCP, call Messari's REST API directly.
+# Messari REST API — Endpoint Reference
 
 **Base URL:** `https://api.messari.io`
+**Auth Header:** `x-messari-api-key: <API_KEY>`
 
-**Authentication:** Include the API key in every request:
+## Contents
 
-```
-x-messari-api-key: <API_KEY>
-```
-
-All endpoints accept and return JSON. Use `Content-Type: application/json` for POST requests.
-
-**API key:** The user needs a Messari API key from [messari.io/api](https://messari.io/api). If no key is available, ask the user to provide one before making requests.
+- [AI Service](#ai-service)
+- [Metrics Service](#metrics-service)
+- [Signal Service](#signal-service)
+- [News Service](#news-service)
+- [Research Service](#research-service)
+- [Stablecoins Service](#stablecoins-service)
+- [Exchanges Service](#exchanges-service)
+- [Networks Service](#networks-service)
+- [Protocols Service](#protocols-service)
+- [Token Unlocks Service](#token-unlocks-service)
+- [Fundraising Service](#fundraising-service)
+- [Intel Service](#intel-service)
+- [Topics Service](#topics-service)
+- [X-Users Service](#x-users-service)
 
 ---
 
-## Services and Endpoints
+## AI Service
 
-### AI Service
-
-Chat completions trained on 30TB+ of structured and unstructured crypto data — market data, fundraising rounds, network metrics, research reports, newsletters, podcasts, and curated news.
-
-Route general or open-ended crypto questions here first. This service synthesizes across all other data sources.
+Chat completions and deep research reports across Messari's full crypto data warehouse. Route general or open-ended crypto questions here first.
 
 Requires Messari AI credits.
+
+### Chat Completions
 
 | Endpoint | Method | Description |
 |---|---|---|
 | `/ai/v1/chat/completions` | POST | Chat completion against Messari's crypto data warehouse |
 | `/ai/openai/chat/completions` | POST | OpenAI-compatible chat completion endpoint |
+| `/ai/v2/chat/completions` | POST | v2 chat completion with inline citations, verbosity control, related questions |
+| `/ai/v1/questions/trending` | GET | Suggested questions based on trending crypto topics |
 
 **POST body:**
 - `messages` — array of `{role, content}` message objects
 - `stream` — boolean, enable streaming responses
 
-```bash
-curl -X POST "https://api.messari.io/ai/v1/chat/completions" \
+**Additional v2 parameters:**
+- `verbosity` — `succinct`, `balanced`, or `verbose`
+- `inline_citations` — boolean, include citation references in metadata
+- `generate_related_questions` — integer, number of follow-up suggestions
+- `response_format` — `markdown` or `plaintext`
+
+**Trending questions parameters (GET):**
+- `limit` — number of trending questions to return (default: 5)
+
+  ```bash
+  curl -X POST "https://api.messari.io/ai/v1/chat/completions" \
   -H "x-messari-api-key: $MESSARI_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"messages": [{"role": "user", "content": "What is the bull case for ETH right now?"}]}'
 ```
 
+### Deep Research
+
+Asynchronous long-form research reports with citations. Each report costs 500 AI credits and takes 5-10 minutes.
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/ai/v1/deep-research` | POST | Create a new deep research job |
+| `/ai/v1/deep-research` | GET | List deep research jobs |
+| `/ai/v1/deep-research/{id}` | GET | Get job status; includes report when completed |
+| `/ai/v1/deep-research/{id}/cancel` | POST | Cancel a queued or in-progress job |
+
+**POST body:**
+- `query` — research topic or question (required)
+- `instructions` — optional system instructions to guide research style
+- `job_id` — optional, pass existing job ID for follow-up refinement
+
+**GET list parameters:**
+- `limit` — max results (default 20, max 100)
+- `offset` — pagination offset
+- `status` — filter: `queued`, `in_progress`, `completed`, `failed`, `cancelled`
+
+**Job lifecycle:** `queued` → `in_progress` → `completed` | `failed` | `cancelled`
+
+**Completed job response includes:**
+- `output.report` — full report in markdown
+- `output.sources` — list of cited sources
+
+```bash
+curl -X POST "https://api.messari.io/ai/v1/deep-research" \
+  -H "x-messari-api-key: $MESSARI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is the current state of liquid staking on Ethereum?"}'
+```
+
 ---
 
-### Metrics Service
+## Metrics Service
 
-Price, volume, market cap, and fundamental metrics for 34,000+ assets across 210+ exchanges. 175+ filterable metrics.
-
-Route quantitative and comparative questions here — price lookups, performance comparisons, ROI, all-time highs, historical timeseries.
+Price, volume, market cap, and fundamental metrics for 34,000+ assets across 210+ exchanges.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -87,11 +120,10 @@ curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
 
 ---
 
-### Signal Service
+
+## Signal Service
 
 Real-time social intelligence — sentiment scoring, mindshare tracking, trending narratives.
-
-Route questions about market sentiment, social buzz, what's trending, mindshare gainers/losers here.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -99,6 +131,10 @@ Route questions about market sentiment, social buzz, what's trending, mindshare 
 | `/signal/v1/assets/{assetId}` | GET | Signal metrics for a specific asset |
 | `/signal/v1/assets/{assetId}/timeseries` | GET | Historical signal timeseries |
 | `/signal/v1/assets/gainers-losers` | GET | Top mindshare gainers and losers |
+| `/signal/v1/assets/mindshare-gainers-24h` | GET | Assets with biggest mindshare gains (24h) |
+| `/signal/v1/assets/mindshare-gainers-7d` | GET | Assets with biggest mindshare gains (7d) |
+| `/signal/v1/assets/mindshare-losers-24h` | GET | Assets with biggest mindshare losses (24h) |
+| `/signal/v1/assets/mindshare-losers-7d` | GET | Assets with biggest mindshare losses (7d) |
 
 **Query parameters:**
 - `type` — signal type (e.g., `mindshare`)
@@ -112,11 +148,9 @@ curl "https://api.messari.io/signal/v1/assets/gainers-losers?type=mindshare&limi
 
 ---
 
-### News Service
+## News Service
 
-Real-time crypto news aggregation — breaking events, project updates, regulatory developments.
-
-Route questions about recent headlines, current events, or "what happened with X" here.
+Real-time crypto news aggregation from 500+ sources.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -135,11 +169,9 @@ curl "https://api.messari.io/news/v1/news/feed?limit=20" \
 
 ---
 
-### Research Service
+## Research Service
 
-Institutional-grade reports — sector deep dives, protocol diligence, quarterly reviews, governance analysis.
-
-Route questions about fundamental research, due diligence, analyst opinions, and sector analysis here.
+Institutional-grade reports — sector deep dives, protocol diligence, quarterly reviews.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -154,11 +186,9 @@ Route questions about fundamental research, due diligence, analyst opinions, and
 
 ---
 
-### Stablecoins Service
+## Stablecoins Service
 
-On-chain metrics, historical timeseries, and per-chain breakdowns for 25+ stablecoins.
-
-Route stablecoin-specific questions here — supply, flows, chain-level breakdowns, market share.
+On-chain metrics and per-chain breakdowns for 25+ stablecoins.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -175,11 +205,9 @@ Route stablecoin-specific questions here — supply, flows, chain-level breakdow
 
 ---
 
-### Exchanges Service
+## Exchanges Service
 
 Exchange-level volume, metrics, and historical timeseries across 210+ exchanges.
-
-Route questions about exchange volumes, comparisons, or exchange-specific data here.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -196,11 +224,9 @@ Route questions about exchange volumes, comparisons, or exchange-specific data h
 
 ---
 
-### Networks Service
+## Networks Service
 
 L1/L2 blockchain network metrics — chain-level activity, fees, active addresses.
-
-Route questions about blockchain networks, chain comparisons, or on-chain metrics here.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -217,11 +243,9 @@ Route questions about blockchain networks, chain comparisons, or on-chain metric
 
 ---
 
-### Protocols Service
+## Protocols Service
 
 DeFi protocol metrics across DEXs, lending, liquid staking, and bridges.
-
-Route DeFi-specific questions here — TVL, protocol comparisons, category-specific data.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -239,11 +263,9 @@ Route DeFi-specific questions here — TVL, protocol comparisons, category-speci
 
 ---
 
-### Token Unlocks Service
+## Token Unlocks Service
 
 Vesting schedules, upcoming unlock events, and supply pressure analysis.
-
-Route questions about token unlocks, vesting, or upcoming supply events here.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -251,6 +273,8 @@ Route questions about token unlocks, vesting, or upcoming supply events here.
 | `/token-unlocks/v1/assets/{assetId}` | GET | Unlock details for an asset |
 | `/token-unlocks/v1/assets/{assetId}/events` | GET | Upcoming unlock events |
 | `/token-unlocks/v1/assets/{assetId}/vesting` | GET | Full vesting schedule |
+| `/token-unlocks/v1/allocations` | GET | Token allocation data across assets |
+| `/token-unlocks/v1/assets/{assetId}/unlocks` | GET | Interval-based unlock timeseries data |
 
 **Query parameters:**
 - `assetSlugs` — comma-separated asset slugs
@@ -259,11 +283,9 @@ Route questions about token unlocks, vesting, or upcoming supply events here.
 
 ---
 
-### Fundraising Service
+## Fundraising Service
 
 Funding rounds, investors, funds, organizations, projects, and M&A activity.
-
-Route questions about who invested in what, fundraising rounds, investor activity, or M&A here.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -273,6 +295,8 @@ Route questions about who invested in what, fundraising rounds, investor activit
 | `/fundraising/v1/investors` | GET | List investors and activity |
 | `/fundraising/v1/funds` | GET | List investment funds |
 | `/fundraising/v1/mergers-acquisitions` | GET | List M&A transactions |
+| `/fundraising/v1/rounds/investors` | GET | Investors that participated in filtered rounds |
+| `/fundraising/v1/funds/managers` | GET | Managers of filtered funds |
 
 **Query parameters:**
 - `assetSlugs` — filter by related asset
@@ -283,11 +307,9 @@ Route questions about who invested in what, fundraising rounds, investor activit
 
 ---
 
-### Intel Service
+## Intel Service
 
 Governance events, protocol upgrades, and key project milestones.
-
-Route questions about governance proposals, protocol upgrades, or project events here.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -303,11 +325,9 @@ Route questions about governance proposals, protocol upgrades, or project events
 
 ---
 
-### Topics Service
+## Topics Service
 
 Trending topic classification and daily timeseries.
-
-Route questions about trending narratives or topic momentum here.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -322,11 +342,9 @@ Route questions about trending narratives or topic momentum here.
 
 ---
 
-### X-Users Service
+## X-Users Service
 
 Crypto X/Twitter user metrics and influence tracking.
-
-Route questions about crypto influencers, social account metrics, or X/Twitter activity here.
 
 | Endpoint | Method | Description |
 |---|---|---|
@@ -338,53 +356,3 @@ Route questions about crypto influencers, social account metrics, or X/Twitter a
 - `limit`, `page` — pagination
 - `start`, `end` — date range (ISO 8601)
 
----
-
-## Routing Guide
-
-Use this logic to pick the right service for a query:
-
-| User is asking about... | Route to |
-|---|---|
-| General crypto question, synthesis, "what do you think about X" | **AI** |
-| Price, volume, market cap, ROI, ATH, performance comparison | **Metrics** |
-| Sentiment, mindshare, trending tokens, social buzz | **Signal** |
-| Headlines, recent events, breaking news | **News** |
-| Analyst reports, deep dives, sector overviews | **Research** |
-| Stablecoin supply, flows, chain breakdowns | **Stablecoins** |
-| Exchange volumes, exchange comparisons | **Exchanges** |
-| L1/L2 network activity, fees, active addresses | **Networks** |
-| DeFi protocols, TVL, lending, DEX volume | **Protocols** |
-| Token unlocks, vesting schedules | **Token Unlocks** |
-| Fundraising rounds, investors, VC activity, M&A | **Fundraising** |
-| Governance events, protocol upgrades | **Intel** |
-| Trending narratives, topic momentum | **Topics** |
-| Crypto influencers, X/Twitter accounts | **X-Users** |
-
-### Multi-service queries
-
-Many questions benefit from combining services. Examples:
-
-- **"Is SOL overvalued?"** → Metrics (price, fundamentals) + Signal (sentiment) + Token Unlocks (supply pressure) + AI (synthesize)
-- **"Due diligence on Eigen Layer"** → Research (reports) + Metrics (fundamentals) + Fundraising (investors) + Intel (governance) + AI (synthesize)
-- **"What are the trending narratives this week?"** → Topics (trending classes) + Signal (mindshare gainers) + News (related headlines)
-- **"Compare TVL across lending protocols"** → Protocols/lending (metrics) + Networks (chain context)
-
-When in doubt, start with the **AI** service — it draws from all other sources and provides the broadest context.
-
----
-
-## Example Questions
-
-```
-"Which assets over $1B marketcap outperformed Bitcoin over the last 3 months?"
-"What are some upcoming token unlock events this month?"
-"Give me the 10 most recent fundraising rounds in the AI and compute sectors."
-"What are the latest headlines related to crypto regulation?"
-"What are some recent developments in the DePin sector?"
-"Which investor has been the most active in seed rounds over the last year?"
-"What were the top events for the AAVE protocol during the last quarter?"
-"Give me the latest ecosystem map of Solana."
-"Tell me about the recent investments from a16z crypto."
-"Compare and contrast the native asset functions of BitTensor vs Render."
-```
