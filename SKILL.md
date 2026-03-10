@@ -1,6 +1,6 @@
 ---
 name: messari
-description: "Use this skill whenever the user asks any question about crypto assets, blockchain networks, DeFi protocols, token unlocks, fundraising rounds, market data, social sentiment, news, or governance — and live data from the Messari API would improve the answer. This includes questions like \"what's the price of X\", \"who invested in Y\", \"what are the top DeFi protocols by TVL\", \"what's trending in crypto\", \"show me upcoming token unlocks\", \"what's the latest news on Ethereum\", \"compare L1 network activity\", \"which exchanges have the most volume\", and any other crypto market intelligence query. Always use this skill proactively when the user's query could benefit from real-time or historical crypto data — don't wait for the user to explicitly ask to \"use Messari\". If the user asks a general crypto question that requires synthesis or research, route to the Messari AI service first."
+description: "Use this skill whenever the user asks any question about crypto assets, blockchain networks, DeFi protocols, token unlocks, fundraising rounds, market data, social sentiment, news, or governance — and live data from the Messari API would improve the answer. This includes questions like \"what's the price of X\", \"who invested in Y\", \"what are the top DeFi protocols by TVL\", \"what's trending in crypto\", \"show me upcoming token unlocks\", \"what's the latest news on Ethereum\", \"compare L1 network activity\", \"which exchanges have the most volume\", and any other crypto query. Always use this skill proactively when the user's query could benefit from real-time or historical crypto data — don't wait for the user to explicitly ask to \"use Messari\". If the user asks a general crypto question that requires synthesis or research, route to the Messari AI service first."
 ---
 
 # Messari — Leading Crypto Data Platform
@@ -13,29 +13,26 @@ and more.
 
 ---
 
-## Step 1: Confirm Authentication
+## Step 1: Setup Authentication
 
-Two modes are supported. Ask the user which they have set up if it's not clear from context.
+Two modes are supported. Check if the user has set up x402 or API key authentication based on the criteria below. If neither is set up, guide the user through the x402 setup instructions below.
 
 **x402 — Recommended (wallet-based, no API key needed)**
-- Requires the `payments-mcp` connector from Coinbase
-- Install: `npx @coinbase/payments-mcp --client claude --auto-config`
+Use this mode if the `payments-mcp` connector is installed.
+Run `payments-mcp:get_wallet_balance` to check if the wallet is connected, otherwise run `payments-mcp:show_wallet_app` to display the wallet app and sign in.
+
+To Setup:
+- Install the `payments-mcp` connector from Coinbase `npx @coinbase/payments-mcp --client $CLIENT --auto-config`
+Supported clients: claude | claude-code | codex | gemini
+- After installation, run `payments-mcp:show_wallet_app` prompt the user to sign in.
+- The user will need to deposit Base USDC to pay for the requests
 - Payments are per-request in USDC on Base via `payments-mcp:make_http_request_with_x402`
-- Does not require pre-purchased credits
 
 **API Key**
+Use this mode if the user has set up an API key in the environment variables $MESSARI_API_KEY or elsewhere in the context
 - Include header `x-messari-api-key: <key>` on every request
 - Some endpoints are *only* available via API key (noted in tables below)
 
-> If neither is configured, recommend x402 first:
-> *"The easiest way is wallet-based — no signup required. Run:*
-> *`npx @coinbase/payments-mcp --client $CLIENT --auto-config`"*
-
-Supported clients:
-- claude
-- claude-code
-- codex
-- gemini
 ---
 
 ## Step 2: Route to the Right Service
