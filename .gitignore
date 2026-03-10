@@ -3,3 +3,4 @@
 *.key
 *.pem
 .DS_Store
+.claude
