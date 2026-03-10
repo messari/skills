@@ -13,25 +13,47 @@ and more.
 
 ---
 
-## Step 1: Setup Authentication
+## Step 1: Confirm Authentication
 
-Two modes are supported. Check if the user has set up x402 or API key authentication based on the criteria below. If neither is set up, guide the user through the x402 setup instructions below.
+Follow this decision tree **before every session**. Do not skip to Step 2 until auth is confirmed.
 
-**x402 — Recommended (wallet-based, no API key needed)**
-Use this mode if the `payments-mcp` connector is installed.
-Run `payments-mcp:get_wallet_balance` to check if the wallet is connected, otherwise run `payments-mcp:show_wallet_app` to display the wallet app and sign in.
+```
+1. Is `payments-mcp` available as a tool?
+   ├── YES → Run `payments-mcp:get_wallet_balance`
+   │          ├── Success → x402 is ready. Proceed to Step 2.
+   │          └── Error   → Run `payments-mcp:show_wallet_app`, then prompt user (see Setup below)
+   └── NO  → Is $MESSARI_API_KEY set or has the user provided an API key?
+              ├── YES → API key mode. Include `x-messari-api-key: <key>` on all requests. Proceed to Step 2.
+              └── NO  → Neither auth is configured. Prompt user (see Setup below).
+```
 
-To Setup:
-- Install the `payments-mcp` connector from Coinbase `npx @coinbase/payments-mcp --client $CLIENT --auto-config`
-Supported clients: claude | claude-code | codex | gemini
-- After installation, run `payments-mcp:show_wallet_app` prompt the user to sign in.
-- The user will need to deposit Base USDC to pay for the requests
-- Payments are per-request in USDC on Base via `payments-mcp:make_http_request_with_x402`
+### x402 Setup (Recommended — wallet-based, no API key needed)
 
-**API Key**
-Use this mode if the user has set up an API key in the environment variables $MESSARI_API_KEY or elsewhere in the context
-- Include header `x-messari-api-key: <key>` on every request
-- Some endpoints are *only* available via API key (noted in tables below)
+If x402 is not yet configured, tell the user:
+
+> **To use Messari, you'll need to set up a payment wallet first. Here's how:**
+>
+> 1. Run this command to install the payments connector (replace `claude` with your client if different):
+>    ```
+>    npx @coinbase/payments-mcp --client claude --auto-config
+>    ```
+>    Supported clients: `claude` | `claude-code` | `codex` | `gemini`
+>
+> 2. Restart your AI client to load the connector.
+>
+> 3. Come back and I'll open the wallet app for you to sign in.
+>
+> Once signed in, deposit some Base USDC to cover API requests (costs are fractions of a cent per call).
+
+After the user has installed and restarted, run `payments-mcp:show_wallet_app` to open the wallet and prompt them to sign in and deposit USDC.
+
+### API Key (Alternative)
+
+If the user has a Messari API key, include this header on every request:
+```
+x-messari-api-key: <MESSARI_API_KEY>
+```
+Note: some endpoints are **only** available via API key (marked `api_key only` below).
 
 ---
 
