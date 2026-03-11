@@ -51,9 +51,9 @@ Some Messari endpoints support pay-per-request access via x402.
 
 **Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
 
-### Request Patterns (curl + TypeScript)
+### Request Patterns
 
-**API-key request pattern (baseline):**
+**API-key request pattern:**
 
 ```bash
 curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
@@ -62,45 +62,44 @@ curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
 
 Use API-key mode for endpoints marked `api_key`-only.
 
-**x402 request pattern (TypeScript payment client):**
+**x402 request pattern:**
 
+```python
+import os
+from dotenv import load_dotenv
+from eth_account import Account
+from x402 import x402ClientSync
+from x402.http import x402HTTPClientSync
+from x402.http.clients import x402_requests
+from x402.mechanisms.evm import EthAccountSigner
+from x402.mechanisms.evm.exact.register import register_exact_evm_client
 
-```bash
-npm install @x402/fetch @x402/evm viem
+load_dotenv()
+
+requests_list = [
+    {
+        "method": "GET",
+        "url": "https://api.messari.io/metrics/v2/assets/details?slugs=bitcoin",
+    },
+]
+
+# Switch index to change request
+r = requests_list[0]
+
+account = Account.from_key(os.getenv("X402_PRIVATE_KEY"))
+print(f"EVM address: {account.address}")
+
+client = x402ClientSync()
+register_exact_evm_client(client, EthAccountSigner(account))
+http_client = x402HTTPClientSync(client)
+
+print(f"Making request to: {r['url']}\n")
+
+with x402_requests(client) as session:
+    response = session.request(r["method"], r["url"], json=r.get("json"))
+    print(f"Response status: {response.status_code}")
+    print(f"Response body: {response.text}")
 ```
-
-```typescript
-import { wrapFetchWithPaymentFromConfig } from '@x402/fetch';
-import { ExactEvmScheme } from '@x402/evm';
-import { privateKeyToAccount } from 'viem/accounts';
-
-const privateKey = process.env.X402_PRIVATE_KEY as `0x${string}` | undefined;
-if (!privateKey) {
-  throw new Error('Set X402_PRIVATE_KEY');
-}
-
-const account = privateKeyToAccount(privateKey);
-const fetchWithPayment = wrapFetchWithPaymentFromConfig(fetch, {
-  schemes: [{ network: 'eip155:8453', client: new ExactEvmScheme(account) }],
-});
-
-const response = await fetchWithPayment('https://api.messari.io/ai/v2/chat/completions', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    messages: [{ role: 'user', content: 'Summarize ETH market sentiment today.' }],
-    stream: false,
-  }),
-});
-
-if (!response.ok) {
-  throw new Error(`Request failed: ${response.status}`);
-}
-
-console.log(await response.json());
-```
-
-`@x402/fetch` handles runtime `402 Payment Required` negotiation, parses `Payment-Required`, and retries with `Payment-Signature` (legacy compatibility: `X-PAYMENT`) after signing through `@x402/evm`.
 
 **Secrets note:** Never commit credentials or signatures. Use placeholders only (`$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`).
 
