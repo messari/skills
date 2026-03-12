@@ -1,63 +1,109 @@
 ---
-name: messari
-description: "Use this skill whenever the user asks any question about crypto assets, blockchain networks, DeFi protocols, token unlocks, fundraising rounds, market data, social sentiment, news, or governance — and live data from the Messari API would improve the answer. This includes questions like \"what's the price of X\", \"who invested in Y\", \"what are the top DeFi protocols by TVL\", \"what's trending in crypto\", \"show me upcoming token unlocks\", \"what's the latest news on Ethereum\", \"compare L1 network activity\", \"which exchanges have the most volume\", and any other crypto query. Always use this skill proactively when the user's query could benefit from real-time or historical crypto data — don't wait for the user to explicitly ask to \"use Messari\". If the user asks a general crypto question that requires synthesis or research, route to the Messari AI service first."
+name: messari-crypto
+description: Messari crypto market intelligence via REST API with one-of credentials for x402-enabled routes (MESSARI_API_KEY or X402_PRIVATE_KEY); use for AI, metrics, signal, news, research, stablecoins, exchanges, networks, protocols, token unlocks, fundraising, intel, topics, and X-users data.
+homepage: https://github.com/messari/skills
+metadata: {"openclaw":{"homepage":"https://github.com/messari/skills","primaryEnv":"MESSARI_API_KEY"}}
 ---
 
-# Messari — Leading Crypto Data Platform
+# Messari Crypto Intel
 
-Answer crypto questions using the Messari API: 34,000+ assets, 210+ exchanges, 14 data services
-covering market metrics, social sentiment, research, on-chain analytics, fundraising, governance,
-and more.
+Real-time crypto market intelligence via Messari's REST API — AI-powered analysis,
+on-chain metrics, sentiment, news, and institutional-grade research without building data pipelines.
 
-**Base URL for all endpoints:** `https://api.messari.io`
+## Prerequisites
 
----
+- **Credential Mode A: API key** (`MESSARI_API_KEY`) — [sign up for an API key](https://messari.io/api) or [retrieve your existing key](https://messari.io/account/api). On credit-metered endpoints (for example, Messari AI), API-key access may require Messari AI credits (manage credits at [messari.io/account](https://messari.io/account)).
+- **Credential Mode B: x402 pay-per-request** (`X402_PRIVATE_KEY`) — use x402 negotiation on x402-enabled routes; this flow does not require pre-purchased Messari AI credits.
+- **Coverage note:** For full endpoint coverage, configure API key; x402-only credentials are limited to x402-enabled routes.
 
-## Step 1: Confirm Authentication
+## REST API Overview
 
-Follow this decision tree **before every session**. Do not skip to Step 2 until auth is confirmed.
+**Base URL:** `https://api.messari.io`
+
+**Authentication modes:**
+- **API key mode:** include API key header:
 
 ```
-1. Is `payments-mcp` available as a tool?
-   ├── YES → Run `payments-mcp:get_wallet_balance`
-   │          ├── Success → x402 is ready. Proceed to Step 2.
-   │          └── Error   → Run `payments-mcp:show_wallet_app`, then prompt user (see Setup below)
-   └── NO  → Is $MESSARI_API_KEY set or has the user provided an API key?
-              ├── YES → API key mode. Include `x-messari-api-key: <key>` on all requests. Proceed to Step 2.
-              └── NO  → Neither auth is configured. Prompt user (see Setup below).
+x-messari-api-key: <YOUR_API_KEY>
 ```
 
-### x402 Setup (Recommended — wallet-based, no API key needed)
+- **x402 mode:** send request normally, handle `402 Payment Required`, then retry with `Payment-Signature` (legacy: `X-PAYMENT`). See the sample code below for how to do this.
 
-If x402 is not yet configured, tell the user:
+**Secrets guardrail:** Never commit secret values. Use env vars only and placeholders like `$MESSARI_API_KEY` and `$X402_PRIVATE_KEY` in docs/examples.
 
-> **To use Messari, you'll need to set up a payment wallet first. Here's how:**
->
-> 1. Run this command to install the payments connector (replace `claude` with your client if different):
->    ```
->    npx @coinbase/payments-mcp --client claude --auto-config
->    ```
->    Supported clients: `claude` | `claude-code` | `codex` | `gemini`
->
-> 2. Restart your AI client to load the connector.
->
-> 3. Come back and I'll open the wallet app for you to sign in.
->
-> Once signed in, deposit some Base USDC to cover API requests (costs are fractions of a cent per call).
+All endpoints accept and return JSON. Use `Content-Type: application/json` for POST requests.
 
-After the user has installed and restarted, run `payments-mcp:show_wallet_app` to open the wallet and prompt them to sign in and deposit USDC.
+## x402 Payments
 
-### API Key (Alternative)
+Some Messari endpoints support pay-per-request access via x402.
 
-If the user has a Messari API key, include this header on every request:
+- Discover payable resources dynamically with `GET https://api.messari.io/.well-known/x402`.
+- Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
+- Do not hardcode x402 prices or payable-route assumptions in this skill.
+- Use the Service Routing Table below as the authoritative service-level view of currently supported authentication methods.
+- On x402-enabled routes, x402 is an alternative to API-key.
+
+**Negotiation flow:**
+1. Send the request normally.
+2. If the response is `402 Payment Required`, parse the payment requirements from the response body and the `Payment-Required` header.
+3. Create/sign the payment payload and retry with `Payment-Signature` (legacy compatibility: `X-PAYMENT`).
+4. Continue once the retried request succeeds.
+
+**Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
+
+### Request Patterns
+
+**API-key request pattern:**
+
+```bash
+curl "https://api.messari.io/metrics/v2/assets?assetSlugs=bitcoin,ethereum" \
+  -H "x-messari-api-key: $MESSARI_API_KEY"
 ```
-x-messari-api-key: <MESSARI_API_KEY>
+
+Use API-key mode for endpoints marked `api_key`-only.
+
+**x402 request pattern:**
+
+```python
+import os
+from dotenv import load_dotenv
+from eth_account import Account
+from x402 import x402ClientSync
+from x402.http import x402HTTPClientSync
+from x402.http.clients import x402_requests
+from x402.mechanisms.evm import EthAccountSigner
+from x402.mechanisms.evm.exact.register import register_exact_evm_client
+
+load_dotenv()
+
+requests_list = [
+    {
+        "method": "GET",
+        "url": "https://api.messari.io/metrics/v2/assets/details?slugs=bitcoin",
+    },
+]
+
+# Switch index to change request
+r = requests_list[0]
+
+account = Account.from_key(os.getenv("X402_PRIVATE_KEY"))
+print(f"EVM address: {account.address}")
+
+client = x402ClientSync()
+register_exact_evm_client(client, EthAccountSigner(account))
+http_client = x402HTTPClientSync(client)
+
+print(f"Making request to: {r['url']}\n")
+
+with x402_requests(client) as session:
+    response = session.request(r["method"], r["url"], json=r.get("json"))
+    print(f"Response status: {response.status_code}")
+    print(f"Response body: {response.text}")
 ```
-Note: some endpoints are **only** available via API key (marked `api_key only` below).
 
----
+**Secrets note:** Never commit credentials or signatures. Use placeholders only (`$MESSARI_API_KEY`, `$X402_PRIVATE_KEY`).
 
-## Step 2: Route to the Right Service
+## Service Routing Table
 
 | User is asking about... | Service | Auth |
 |---|---|---|
@@ -79,7 +125,9 @@ Note: some endpoints are **only** available via API key (marked `api_key only` b
 **When in doubt, start with the AI service** — it synthesizes across all sources and handles
 open-ended questions well.
 
-### Example query routing
+For detailed endpoint documentation, see "API Service Directory" below or the full [Messari API docs](https://docs.messari.io/introduction).
+
+## Example Request Routing
 ```
 "Tell me about x402 and how it works."              → AI       /ai/v2/chat/completions
 "What are upcoming token unlocks this month?"       → Unlocks  /token-unlocks/v1/assets
@@ -93,9 +141,7 @@ open-ended questions well.
 "Compare BitTensor vs Render native assets"         → Metrics  /metrics/v2/assets/details
 ```
 
----
-
-## Step 3: Call the Endpoint
+## API Service Directory
 
 ### AI Service
 Chat completions trained on 30TB+ of structured crypto data. Handles synthesis, comparisons,
