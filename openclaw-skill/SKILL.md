@@ -38,8 +38,8 @@ All endpoints accept and return JSON. Use `Content-Type: application/json` for P
 Some Messari endpoints support pay-per-request access via x402.
 
 - Discover payable resources dynamically with `GET https://api.messari.io/.well-known/x402`.
-- Treat the runtime `402 Payment Required` challenge as the source of truth for payable route and price.
-- Do not hardcode x402 prices or payable-route assumptions in this skill.
+- Treat the runtime `402 Payment Required` challenge as the source of truth for payable route, chain, asset, and price.
+- Do not hardcode x402 prices, chains, or payable-route assumptions in this skill.
 - Use the Service Routing Table below as the authoritative service-level view of currently supported authentication methods.
 - On x402-enabled routes, x402 is an alternative to API-key.
 
@@ -50,6 +50,22 @@ Some Messari endpoints support pay-per-request access via x402.
 4. Continue once the retried request succeeds.
 
 **Budget guardrail:** If there is no pre-approved budget or prior user consent, ask the user to confirm before executing paid x402 requests.
+
+### Supported settlement chains
+
+x402 endpoints negotiate the chain and asset at runtime via the `402` challenge. The
+`X402_PRIVATE_KEY` address must hold the right asset on whichever chain the facilitator returns:
+
+| Chain | Asset | Facilitator | Notes |
+|---|---|---|---|
+| Base (`eip155:8453`) | USDC | Coinbase / CDP | Default for most x402 routes. |
+| Solana mainnet | USDC | Solana x402 payer | Requires a Solana keypair, not an EVM key. |
+| X Layer (`eip155:196`) | USDT (USD₮0) | OKX | EVM-compatible — same Python flow as Base, different asset. OKX sponsors gas when eligible. |
+
+**Wallet pairing:** users on OKX Wallet should route to X Layer (Coinbase's facilitator does
+not support X Layer). Users on Coinbase Wallet should route to Base. The same EVM
+`X402_PRIVATE_KEY` flow shown below signs for either Base or X Layer based on what the
+facilitator returns — only the funded asset/chain differs.
 
 ### Request Patterns
 

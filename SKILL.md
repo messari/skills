@@ -18,16 +18,49 @@ and more.
 Follow this decision tree **before every session**. Do not skip to Step 2 until auth is confirmed.
 
 ```
-1. Is `payments-mcp` available as a tool?
-   ├── YES → Run `payments-mcp:get_wallet_balance`
-   │          ├── Success → x402 is ready. Proceed to Step 2.
+1. Is an x402 wallet connector available?
+   ├── `payments-mcp` (Coinbase Wallet → Base USDC)
+   │     → Run `payments-mcp:get_wallet_balance`
+   │          ├── Success → x402 is ready on Base. Proceed to Step 2.
    │          └── Error   → Run `payments-mcp:show_wallet_app`, then prompt user (see Setup below)
-   └── NO  → Is $MESSARI_API_KEY set or has the user provided an API key?
-              ├── YES → API key mode. Include `x-messari-api-key: <key>` on all requests. Proceed to Step 2.
-              └── NO  → Neither auth is configured. Prompt user (see Setup below).
+   ├── `onchainos` / OKX Agentic Wallet (OKX Wallet → X Layer USDT)
+   │     → Confirm the wallet is signed in and funded on X Layer. Proceed to Step 2.
+   └── Neither → Is $MESSARI_API_KEY set or has the user provided an API key?
+                  ├── YES → API key mode. Include `x-messari-api-key: <key>` on all requests. Proceed to Step 2.
+                  └── NO  → No wallet + no API key. Choose the setup path by the user's intent (see Setup):
+                              • Wants X Layer / has an OKX Wallet → install OKX: `npx skills add okx/onchainos-skills`
+                              • Otherwise → install Coinbase: `npx @coinbase/payments-mcp --client claude --auto-config`
 ```
 
+> **Install the wallet that matches the chain the user wants — don't fall back to the other chain
+> just because its connector happens to be present.** If the user wants X Layer but only
+> `payments-mcp` (Coinbase) is installed, install the OKX `onchainos` wallet skill rather than
+> routing them to Base; and vice-versa.
+
+**Wallet ↔ chain pairing** (do not mix): Coinbase Wallet settles on Base. OKX Wallet settles on
+X Layer. If the user mentions either OKX Wallet or X Layer, route them through the OKX path
+in Setup — Coinbase's facilitator does not support X Layer.
+
 ### x402 Setup (Recommended — wallet-based, no API key needed)
+
+Messari's x402 endpoints settle on multiple chains. Pick the wallet that matches the chain
+the user wants to pay on — wallet and chain are paired:
+
+| Wallet | Chain | Asset | When to use |
+|---|---|---|---|
+| **Coinbase Wallet** *(default)* | Base | USDC | Default path. Broadest endpoint coverage. |
+| **OKX Wallet** | X Layer | USDT (USD₮0) | User has OKX Wallet, asks for X Layer, or wants OKX's sponsored-gas / sub-cent economics. **Coinbase Wallet does not work on X Layer.** |
+
+**Routing rule:**
+- User mentions **OKX Wallet** → set them up on X Layer (OKX path below).
+- User mentions **X Layer** → set them up with OKX Wallet (OKX path below).
+- Otherwise → default to Coinbase Wallet on Base.
+
+If the matching wallet connector isn't installed yet, install it first (the command is in each
+path below) — the OKX path requires the `onchainos` wallet skill, which is **not** installed by
+default. Only the user can run the `npx` install and sign in; surface the command and wait.
+
+#### Default path: Coinbase Wallet → Base USDC
 
 If x402 is not yet configured, tell the user:
 
@@ -46,6 +79,29 @@ If x402 is not yet configured, tell the user:
 > Once signed in, deposit some Base USDC to cover API requests (costs are fractions of a cent per call).
 
 After the user has installed and restarted, run `payments-mcp:show_wallet_app` to open the wallet and prompt them to sign in and deposit USDC.
+
+#### Alternative path: OKX Wallet → X Layer USDT
+
+Use this when the user already has OKX Wallet, asks specifically for X Layer, or wants OKX's
+ecosystem benefits (sponsored gas, sub-cent fees). Tell the user:
+
+> **To use Messari on X Layer with OKX Wallet:**
+>
+> 1. Install the OKX Agentic Wallet skill:
+>    ```
+>    npx skills add okx/onchainos-skills
+>    ```
+>    Supported clients: Claude Code, Cursor, Codex CLI, OpenCode.
+>
+> 2. Restart your AI client to load the skill.
+>
+> 3. Sign in — ask your agent to "Log in to Agentic Wallet with email", then enter your email and the OTP code. The wallet generates an EVM + Solana address (private keys stay inside OKX's TEE and are never exposed to the model).
+>
+> 4. Fund the EVM address on X Layer mainnet (`eip155:196`): deposit USDT (USD₮0, `0x779D…3736`).
+>
+> OKX sponsors gas on X Layer when eligible, so deposits go almost entirely toward API requests.
+
+For OKX setup details, see https://web3.okx.com/onchainos/dev-docs/home/install-your-agentic-wallet
 
 ### API Key (Alternative)
 
